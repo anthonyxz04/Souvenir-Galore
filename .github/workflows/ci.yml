@@ -12,6 +12,11 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # only to post failure logs as a commit comment
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 40
     services:
       postgres:
@@ -36,28 +41,55 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+        run: |
+          mkdir -p ci-logs
+          if [ -f package-lock.json ]; then cmd="npm ci"; else cmd="npm install"; fi
+          $cmd 2>&1 | tee ci-logs/install.log || { echo install >> ci-logs/FAILED; exit 1; }
+      # Every check below runs even if an earlier one failed, so one run shows every problem.
       - name: Unit tests
-        run: npm test
-      - name: Production build
-        run: npm run build
+        if: ${{ !cancelled() }}
+        run: npm test 2>&1 | tee ci-logs/unit.log || { echo unit >> ci-logs/FAILED; exit 1; }
       - name: Type check
-        run: npm run typecheck
+        if: ${{ !cancelled() }}
+        run: npm run typecheck 2>&1 | tee ci-logs/typecheck.log || { echo typecheck >> ci-logs/FAILED; exit 1; }
+      - name: Production build
+        if: ${{ !cancelled() }}
+        run: npm run build 2>&1 | tee ci-logs/build.log || { echo build >> ci-logs/FAILED; exit 1; }
       - name: Netlify Database migrations match the Prisma schema
+        if: ${{ !cancelled() }}
         env:
           PGPASSWORD: ci-only-password
         run: |
-          psql -h localhost -U souvenir -d souvenir_test -c "CREATE DATABASE netlify_sql_check"
-          for f in netlify/database/migrations/*/migration.sql; do
-            psql -v ON_ERROR_STOP=1 -q -h localhost -U souvenir -d netlify_sql_check -f "$f"
-          done
-          npx prisma migrate diff --from-url "postgresql://souvenir:ci-only-password@localhost:5432/netlify_sql_check" --to-schema-datamodel prisma/schema.prisma --exit-code
+          {
+            psql -h localhost -U souvenir -d souvenir_test -c "CREATE DATABASE netlify_sql_check" &&
+            for f in netlify/database/migrations/*/migration.sql; do
+              echo "applying $f" && psql -v ON_ERROR_STOP=1 -q -h localhost -U souvenir -d netlify_sql_check -f "$f" || exit 1
+            done &&
+            npx prisma migrate diff --from-url "postgresql://souvenir:ci-only-password@localhost:5432/netlify_sql_check" --to-schema-datamodel prisma/schema.prisma --script --exit-code
+          } 2>&1 | tee ci-logs/migrations.log || { echo migrations >> ci-logs/FAILED; exit 1; }
       - name: Integration tests (real database)
-        run: npm run test:integration
+        if: ${{ !cancelled() }}
+        run: npm run test:integration 2>&1 | tee ci-logs/integration.log || { echo integration >> ci-logs/FAILED; exit 1; }
       - name: Install Chromium for end-to-end tests
-        run: npx playwright install --with-deps chromium
+        if: ${{ !cancelled() }}
+        run: npx playwright install --with-deps chromium 2>&1 | tail -20
       - name: End-to-end tests (customer and admin journeys)
-        run: npm run test:e2e
+        if: ${{ !cancelled() }}
+        run: npm run test:e2e 2>&1 | tee ci-logs/e2e.log || { echo e2e >> ci-logs/FAILED; exit 1; }
+      - name: Post failure logs as a commit comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "CI failed on ${GITHUB_SHA::7}. Last lines of each failing check:"
+            for name in $(cat ci-logs/FAILED 2>/dev/null); do
+              printf '\n### %s\n```\n' "$name"
+              tail -c 9000 "ci-logs/$name.log" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+              printf '\n```\n'
+            done
+          } | head -c 64000 > ci-logs/comment.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@ci-logs/comment.md > /dev/null
       - name: Keep test reports
         if: failure()
         uses: actions/upload-artifact@v4
@@ -66,4 +98,5 @@ jobs:
           path: |
             test-results/
             playwright-report/
+            ci-logs/
           retention-days: 7

@@ -1,0 +1,47 @@
+# Read-only checks against the live website (see scripts/live-check.mjs).
+# Run it from Actions → Live site check → Run workflow. It creates no accounts,
+# orders or other records. Results and screenshots are saved to the
+# live-check-results branch, replaced on every run.
+name: Live site check
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Website address to check
+        required: true
+        default: https://souvenir-galore.netlify.app
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # only to save results to the live-check-results branch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install a browser
+        run: |
+          mkdir -p "$RUNNER_TEMP/lc" && cp scripts/live-check.mjs "$RUNNER_TEMP/lc/"
+          cd "$RUNNER_TEMP/lc" && npm init -y > /dev/null && npm install --no-audit --no-fund playwright@1.56 > /dev/null
+          npx playwright install --with-deps chromium > /dev/null
+      - name: Check the live site
+        env:
+          LIVE_URL: ${{ inputs.url }}
+          OUT_DIR: ${{ runner.temp }}/live-check
+        run: node "$RUNNER_TEMP/lc/live-check.mjs"
+      - name: Save results to the live-check-results branch
+        if: always()
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/live-check" || exit 0
+          git init -q -b live-check-results
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Live check of ${{ inputs.url }} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" live-check-results

@@ -65,7 +65,7 @@ export type SectionSeed = {
   ctaHref?: string;
   secondaryCtaLabel?: string;
   secondaryCtaHref?: string;
-  config?: Record<string, unknown>;
+  config?: { [key: string]: string | number | boolean };
   isVisible?: boolean;
   items?: { title: string; body?: string }[];
 };
