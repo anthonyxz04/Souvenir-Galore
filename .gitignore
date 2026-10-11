@@ -13,9 +13,9 @@ next-env.d.ts
 !.env.example
 
 # local uploads (local storage driver) and backups
-storage/
-storage-e2e/
-backups/
+/storage/
+/storage-e2e/
+/backups/
 
 # testing
 coverage/

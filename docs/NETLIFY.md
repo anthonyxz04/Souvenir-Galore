@@ -1,111 +1,91 @@
 # Publishing on Netlify
 
-Souvenir Galore is a **Next.js 16 app with a database**. It isn't a static website, so it needs three things:
+Souvenir Galore is a **Next.js 16 app with a database**, not a static website. On Netlify it uses only Netlify services:
 
-| What | Service | Account needed? |
+| What | Service | Separate account? |
 |---|---|---|
-| Website, server code, scheduled cleanup | **Netlify** (runs Next.js automatically) | Yes |
-| Product photos and customer uploads | **Netlify Blobs** | No, it's included with Netlify |
-| Database (products, orders, customers) | **PostgreSQL**, e.g. **Neon** | Yes |
+| Website, server code, daily cleanup | **Netlify** (runs Next.js automatically) | Your Netlify account |
+| Database (products, orders, customers) | **Netlify Database** (managed PostgreSQL) | No, it's created automatically |
+| Product photos and customer uploads | **Netlify Blobs** | No, it's included |
 | Emails (verification, password reset, order emails) | Any SMTP provider, e.g. **Resend** | Optional to start, needed before launch |
 
-## Netlify settings (already in `netlify.toml`)
+Netlify Database runs on Netlify's credit-based plans and uses credits for compute while active. Check your credit usage under **Team settings → Billing**.
 
-| Setting | Value |
+## How it's configured
+
+| Setting | Where | Value |
+|---|---|---|
+| Build command | `netlify.toml` | `npm run netlify-build` |
+| Publish directory | `netlify.toml` | `.next` |
+| Node version | `netlify.toml` | 22 |
+| Database tables and starting data | `netlify/database/migrations/` | Applied by Netlify automatically before each deploy goes live (only new migrations run) |
+| Functions | automatic | Netlify's Next.js runtime, plus `netlify/functions/daily-cleanup.mts` (runs daily) |
+| Redirects | none needed | Next.js handles every route, including page refreshes. **Don't** add a `/* /index.html 200` rule. |
+
+**The starting data includes:**
+- categories and filter tags
+- draft collections
+- payment methods, all switched off
+- delivery areas, all inactive
+- homepage sections
+- policy page templates
+- FAQ drafts
+
+It doesn't include products, users or reviews.
+
+**Environment variables** (Project configuration → Environment variables):
+
+| Variable | Purpose |
 |---|---|
-| Build command | `npm run netlify-build` |
-| Publish directory | `.next` |
-| Node version | 22 |
-| Functions | Created automatically by Netlify's Next.js runtime, plus `netlify/functions/daily-cleanup.mts` (scheduled daily) |
-| Redirects | None needed. Next.js handles every route, including page refreshes. **Don't** add a `/* /index.html 200` rule. |
+| `APP_SECRET` | Random 40+ character secret. Without it, the site shows a "finish setup" page. |
+| `CRON_SECRET` | Random value that lets the daily cleanup run |
+| `SETUP_TOKEN` | Random value for the one-time owner setup link (below) |
+| `STORAGE_DRIVER` | `netlify` (photos in Netlify Blobs) |
+| `SMTP_*`, `EMAIL_FROM`, `ADMIN_NOTIFICATION_EMAILS` | Email sending (optional at first) |
+| `APP_URL` | Only if you add your own domain and want to force it; otherwise Netlify's address is used |
 
-`npm run netlify-build` does four things:
-1. Brings the database tables up to date. If there are no migration files yet, it creates the tables from `prisma/schema.prisma`, and it never deletes data.
-2. Loads the starting data: categories, filters, page templates and payment methods (all switched off). Data that already exists is left alone.
-3. Creates your owner account the first time, if `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set.
-4. Builds the site.
+When you tick **Contains secret values** (recommended for `APP_SECRET`, `CRON_SECRET`, `SETUP_TOKEN` and `SMTP_PASSWORD`), Netlify asks for a value per deploy context. Set the **Production** value. Deploy previews without `APP_SECRET` show the "finish setup" page instead of the shop, which is expected.
 
-Deploy previews and branch deploys only build; they never change the database during the build.
+## Creating the owner account
 
-## Step by step
+The first owner account is created from a **one-time private link**:
 
-### 1. Create the database (about 5 minutes)
+```
+https://<your-site>.netlify.app/setup-owner?token=<SETUP_TOKEN>
+```
 
-1. Sign up at **neon.tech** and click **Create project**. Pick a region near Lebanon, such as AWS Europe (Frankfurt).
-2. On the project dashboard, click **Connect**. Copy two connection strings:
-   - With **Connection pooling ON**, the address contains `-pooler`. This becomes `DATABASE_URL`; add `&pgbouncer=true` to the end.
-   - With **Connection pooling OFF**: this becomes `MIGRATE_DATABASE_URL`.
+- Open it, enter your name, email and a password you choose, and you're taken to the dashboard.
+- The page only works while no owner exists. After that it shows "page not found", so the link can't be reused.
+- There is no public admin registration and no default password.
+- After creating the account, you can delete `SETUP_TOKEN` from the environment variables.
 
-### 2. Put the project on GitHub
+## Updating the site
 
-Netlify builds the site from a GitHub repository. Building it on Netlify's Linux servers is what makes photo processing work, so this is more reliable than uploading from your computer.
+Every push to the `main` branch on GitHub rebuilds and publishes the site. Schema changes are added as **new** migration files in `netlify/database/migrations/`:
+1. Generate the SQL with `npx prisma migrate diff --from-schema-datamodel <old schema> --to-schema-datamodel prisma/schema.prisma --script`.
+2. Never edit a migration that has already been applied.
 
-- **Easiest:** install **GitHub Desktop**, choose **File → Add local repository**, pick the `souvenir-galore` folder, then click **Publish repository** with **Keep this code private** ticked.
-- `.env` and other private files are already excluded by `.gitignore`. Only the code goes up.
+GitHub Actions checks on every push that these migrations match `prisma/schema.prisma` exactly.
 
-### 3. Create the site on Netlify
+## Using your own PostgreSQL instead (optional)
 
-1. Sign up at **netlify.com** with your GitHub account.
-2. Click **Add new project → Import an existing project → GitHub**, then choose your `souvenir-galore` repository.
-3. Netlify reads the build settings from `netlify.toml`, so leave them as they are.
-4. Before deploying, open **Environment variables → Add environment variables → Import from a .env file**. Paste the contents of `netlify.env.example` with your real values:
+To use Neon or another PostgreSQL provider instead:
+1. Set `DATABASE_URL` (pooled) and `MIGRATE_DATABASE_URL` (direct).
+2. Set `ADMIN_EMAIL`, `ADMIN_NAME` and `ADMIN_PASSWORD`.
 
-| Variable | What to put |
-|---|---|
-| `DATABASE_URL` | Neon **pooled** string with `&pgbouncer=true` added |
-| `MIGRATE_DATABASE_URL` | Neon **direct** string |
-| `APP_SECRET` | 40+ random letters and numbers from a password generator |
-| `CRON_SECRET` | Another random value |
-| `STORAGE_DRIVER` | `netlify` |
-| `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Your owner sign-in. The password needs 10+ characters and can't be a common one. |
-| `SMTP_*`, `EMAIL_FROM`, `ADMIN_NOTIFICATION_EMAILS` | Your email provider's details, or leave them empty for now |
-
-5. Click **Deploy**. The first build takes a few minutes. In the deploy log, look for `✓ Owner account ready for …`.
-
-### 4. Open your site
-
-- **Shop:** `https://<your-site-name>.netlify.app`. You can rename the site under **Project configuration → Change project name**.
-- **Dashboard:** `https://<your-site-name>.netlify.app/admin`. Sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
-- Then **delete `ADMIN_PASSWORD`** under **Project configuration → Environment variables**. It's only read during builds.
-
-### 5. Set up the store in the dashboard
-
-1. With no products yet, the dashboard offers **Add sample products** (12 clearly labelled samples) to try the shop, cart and checkout. You can remove them later with **Remove sample products**.
-2. Add your real products: **Products → New product**. Upload photos, set the price, stock and category, set the status to **Active**, and save. The product appears in the shop straight away.
-3. Fill in **Settings** (contact details, WhatsApp, Instagram), **Delivery & pickup** (fees per area) and **Payments**. Whish Money stays off until you enter its details and switch it on.
-4. Work through [GO_LIVE_CHECKLIST.md](GO_LIVE_CHECKLIST.md).
-
-## Deploying by drag and drop (without GitHub)
-
-This works too, but every update means dragging the folder again.
-
-1. Unzip the project and drag the **`souvenir-galore` folder** onto Netlify's deploy area. Netlify builds it.
-2. The first build has no settings yet, so it deploys a site that shows **"Our shop is almost ready"** and lists the missing settings.
-3. Open **Project configuration → Environment variables → Import from a .env file**. Paste the filled-in `netlify.env.example`.
-4. Go to **Deploys** and drag the same folder onto the deploy area again. This build creates the database tables and your owner account, and the shop opens.
+The build then creates the tables, loads the starting data and creates the owner itself. Netlify Database is skipped at runtime whenever `DATABASE_URL` is set.
 
 ## Your own domain
 
-Go to **Domain management → Add a domain** in Netlify and follow its DNS steps; HTTPS is set up for you. Redeploy once afterwards (**Deploys → Trigger deploy**) so links in emails and the sitemap use the new address. You can also set `APP_URL` to it.
-
-## Updating the site later
-
-Commit and push your changes with GitHub Desktop. Netlify rebuilds and publishes automatically.
+1. In Netlify, go to **Domain management → Add a domain** and follow the DNS steps. HTTPS is automatic.
+2. Redeploy once, so links in emails and the sitemap use the new address.
 
 ## If something goes wrong
 
 | Symptom | Fix |
 |---|---|
-| The site only shows "Our shop is almost ready" | The deploy was built before the settings existed. Add the environment variables, then redeploy (Trigger deploy, or drop the folder again). |
-| Build fails with a database connection error | Check both Neon strings; `MIGRATE_DATABASE_URL` must be the one without `-pooler`. |
-| Build fails at `ADMIN_PASSWORD: …` | The password is too short or too common. Change it and redeploy. |
-| Every page shows an error after deploy | `APP_SECRET` is missing or shorter than 32 characters. The function log says which. |
-| Photos don't upload | Make sure `STORAGE_DRIVER` is `netlify`. |
-| Old icon in the browser tab | Press Ctrl+Shift+R (Cmd+Shift+R on Mac), or open the site in a private window. |
-| Customers can't verify email or reset passwords | Set up SMTP (Resend: host `smtp.resend.com`, port `465`, user `resend`, password = API key, after verifying your domain with Resend). |
-
-## What was and wasn't verified
-
-- **Not verified yet:** this setup hasn't been deployed to Netlify. The environment it was prepared in couldn't install packages or reach Netlify, so the first real deploy is the first full test. Read the deploy log if it fails; the table above covers the likely causes.
-- **Verified:** the photo storage code was exercised with the real Netlify Blobs client library against a local stand-in for the Blobs service, covering writing, reading back, private versus public separation, missing files and deletion.
-- **Will verify the rest:** the repository includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that runs the full build and every test on each push. Check the **Actions** tab on GitHub after your first push.
+| The site only shows "Our shop is almost ready" | `APP_SECRET` was missing when it was built. Add it and redeploy. |
+| Visitors are asked to log in to Netlify | Project configuration → Access & security → Visitor access: turn off team login protection for production. |
+| Photos don't upload | Check that `STORAGE_DRIVER` is `netlify`. |
+| Old icon in the browser tab | Press Ctrl+Shift+R (Cmd+Shift+R on Mac), or use a private window. |
+| Customers can't verify email or reset passwords | Set up SMTP. For Resend: host `smtp.resend.com`, port `465`, user `resend`, password = your API key, after verifying your domain with Resend. |

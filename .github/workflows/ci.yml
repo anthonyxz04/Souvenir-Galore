@@ -43,6 +43,15 @@ jobs:
         run: npm run build
       - name: Type check
         run: npm run typecheck
+      - name: Netlify Database migrations match the Prisma schema
+        env:
+          PGPASSWORD: ci-only-password
+        run: |
+          psql -h localhost -U souvenir -d souvenir_test -c "CREATE DATABASE netlify_sql_check"
+          for f in netlify/database/migrations/*/migration.sql; do
+            psql -v ON_ERROR_STOP=1 -q -h localhost -U souvenir -d netlify_sql_check -f "$f"
+          done
+          npx prisma migrate diff --from-url "postgresql://souvenir:ci-only-password@localhost:5432/netlify_sql_check" --to-schema-datamodel prisma/schema.prisma --exit-code
       - name: Integration tests (real database)
         run: npm run test:integration
       - name: Install Chromium for end-to-end tests
