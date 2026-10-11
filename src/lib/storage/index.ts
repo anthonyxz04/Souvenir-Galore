@@ -37,12 +37,14 @@ function contentTypeFor(key: string): string {
 }
 
 class LocalDriver implements StorageDriver {
-  private readonly root = path.resolve(process.env.STORAGE_LOCAL_DIR || "./storage");
+  // Uploads live outside the app bundle; the ignore comments stop the bundler
+  // from tracing (and shipping) the whole project because of this runtime path.
+  private readonly root = path.resolve(/* turbopackIgnore: true */ process.env.STORAGE_LOCAL_DIR || "./storage");
 
   private filePath(key: string, visibility: Visibility): string {
     assertSafeKey(key);
-    const base = path.join(this.root, visibility === "PUBLIC" ? "public" : "private");
-    const full = path.resolve(base, key);
+    const base = path.join(/* turbopackIgnore: true */ this.root, visibility === "PUBLIC" ? "public" : "private");
+    const full = path.resolve(/* turbopackIgnore: true */ base, key);
     if (!full.startsWith(base + path.sep)) throw new Error("Invalid storage path");
     return full;
   }

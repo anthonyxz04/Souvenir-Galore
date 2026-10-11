@@ -85,7 +85,7 @@ test.describe("cart", () => {
 
 test.describe.serial("customer features", () => {
   const shopper = { name: "Rana Khoury", email: `shopper-${Date.now()}@e2e.test`, password: "e2e-shopper-passphrase" };
-  const other = { name: "Elie Saab", email: `other-${Date.now()}@e2e.test`, password: "e2e-other-passphrase" };
+  const other = { name: "Karim Nassar", email: `other-${Date.now()}@e2e.test`, password: "e2e-other-passphrase" };
   let shopperOrder = "";
 
   test("wishlist: save and remove a product", async ({ page }) => {
