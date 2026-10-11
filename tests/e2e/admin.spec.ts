@@ -58,8 +58,10 @@ test.describe.serial("admin dashboard", () => {
     await page.goto("/admin/orders?payment=UNPAID");
     await page.getByRole("link", { name: /SG-\d+/ }).first().click();
     await page.getByRole("button", { name: "Record cash received" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "marked as paid" })).toBeVisible();
+    // Once paid, the page refreshes: the payment form is replaced by the result.
+    await expect(page.getByText("Payment received and verified.").first()).toBeVisible();
     await expect(page.getByText("Paid", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Record cash received" })).toHaveCount(0);
   });
 
   test("uploads from other sites are rejected", async ({ request }) => {
