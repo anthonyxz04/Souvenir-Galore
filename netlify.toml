@@ -10,6 +10,10 @@
   # first owner (only if ADMIN_EMAIL/ADMIN_PASSWORD are set), then build.
   command = "npm run netlify-build"
   publish = ".next"
+  # Skip the production build when a push only changes docs, tests, CI or
+  # other files that aren't part of the website. On Netlify's credit-based
+  # plans every successful production deploy uses credits.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)docs' ':(exclude)tests' ':(exclude).github' ':(exclude)*.md' ':(exclude)scripts/live-check.mjs' ':(exclude)scripts/backup.sh' ':(exclude)playwright.config.ts' ':(exclude)vitest.config.ts' ':(exclude)docker-compose.yml' ':(exclude)Dockerfile' ':(exclude).dockerignore' ':(exclude)vercel.json' ':(exclude).env.example' ':(exclude)netlify.env.example'"
 
 [build.environment]
   NODE_VERSION = "22"

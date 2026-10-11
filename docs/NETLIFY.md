@@ -11,6 +11,20 @@ Souvenir Galore is a **Next.js 16 app with a database**, not a static website. O
 
 Netlify Database runs on Netlify's credit-based plans and uses credits for compute while active. Check your credit usage under **Team settings → Billing**.
 
+### Credits on the Free plan
+
+The Free plan includes **300 credits a month, with a hard limit**: when they run out, Netlify pauses the site ("Site not available") until the next month or an upgrade. What uses credits:
+
+| Usage | Credits |
+|---|---|
+| Each successful production deploy (every push to `main` that changes the website) | 15 |
+| Database and server compute while awake | 10 per GB-hour |
+| Bandwidth | 20 per GB |
+| Page and API requests | 2 per 10,000 |
+| Failed deploys and deploy previews | 0 |
+
+To save credits, `netlify.toml` skips the production build when a push only changes docs, tests or CI files. Batch website changes into fewer pushes. Before you start taking real orders, watch the usage for a few days and move to the Personal or Pro plan if the store will need more than the Free plan includes.
+
 ## How it's configured
 
 | Setting | Where | Value |
