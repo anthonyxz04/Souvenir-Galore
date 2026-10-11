@@ -140,6 +140,19 @@ describe.skipIf(!hasDatabase)("product management (real database)", () => {
     expect(parsePreview3d((await prisma.product.findUniqueOrThrow({ where: { id: copy.id } })).preview3d).enabled).toBe(true);
   });
 
+  it("keeps personalization fields added in the editor", async () => {
+    const field = (label: string, id?: string) => ({ id, label, type: "TEXT" as const, isRequired: false, maxLength: 16, options: [], priceDelta: "2.00", placeholder: null, helpText: null });
+    const saved = await saveProduct(payload({ personalizationFields: [field("Name")] }), 2, "actor");
+    const first = await prisma.personalizationField.findMany({ where: { productId: saved.id } });
+    expect(first.map((f) => [f.label, f.priceDelta])).toEqual([["Name", 200]]);
+
+    const variants = (await prisma.productVariant.findMany({ where: { productId: saved.id } })).map((v) => ({ id: v.id, option1: null, option2: null, option3: null, sku: v.sku, price: "18.00", salePrice: null, costPrice: null, stock: 0, stockAdjustment: 0, isActive: true }));
+    await saveProduct(payload({ id: saved.id, variants, personalizationFields: [field("Name", first[0].id), field("Date")] }), 2, "actor");
+    const second = await prisma.personalizationField.findMany({ where: { productId: saved.id }, orderBy: { position: "asc" } });
+    expect(second.map((f) => f.label)).toEqual(["Name", "Date"]);
+    expect(second[0].id).toBe(first[0].id);
+  });
+
   it("sample candle comes with a working 3D setup", async () => {
     await prisma.category.create({ data: { name: "Concrete candle jars", slug: "concrete-candle-jars" } });
     await addDemoProduct(0, null);
@@ -147,7 +160,7 @@ describe.skipIf(!hasDatabase)("product management (real database)", () => {
     const config = parsePreview3d(product.preview3d);
     expect(config.enabled).toBe(true);
     expect(config.bindings).toMatchObject({ jarColor: "Jar color", waxColor: "Wax color", size: "Size", lid: "Lid", font: "Lettering", labelText: ["Name on the label"] });
-    expect(Object.keys(config.jarColors)).toEqual(["Natural", "Charcoal", "Terracotta", "White"]);
+    expect(Object.keys(config.jarColors).sort()).toEqual(["Charcoal", "Natural", "Terracotta", "White"]);
     expect(config.lids).toEqual({ "No lid": "none", Wood: "wood", Gold: "gold" });
     expect(config.fonts).toEqual({ Classic: "serif", Handwritten: "script", Modern: "sans" });
   });

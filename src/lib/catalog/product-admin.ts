@@ -253,7 +253,13 @@ export async function saveProduct(payload: ProductPayload, decimals: number, act
       // Variants
       const current = await tx.productVariant.findMany({ where: { productId: id }, select: { id: true, stock: true, _count: { select: { orderItems: true } } } });
       const currentIds = new Set(current.map((v) => v.id));
-      const keepIds = new Set<string>();
+      const keepIds = new Set<string>(variants.flatMap((v) => (v.id && currentIds.has(v.id) ? [v.id] : [])));
+      // Remove variants that are gone first, so a new variant can reuse their SKU.
+      for (const old of current) {
+        if (keepIds.has(old.id)) continue;
+        if (old._count.orderItems > 0) await tx.productVariant.update({ where: { id: old.id }, data: { isActive: false, sku: null, position: 999 } });
+        else await tx.productVariant.delete({ where: { id: old.id } });
+      }
       for (const [position, variant] of variants.entries()) {
         const optionValues = [variant.option1, variant.option2, variant.option3].map((v, i) => (i < options.length ? v : null));
         const data = {
@@ -269,7 +275,6 @@ export async function saveProduct(payload: ProductPayload, decimals: number, act
           position,
         };
         if (variant.id && currentIds.has(variant.id)) {
-          keepIds.add(variant.id);
           const updated = await tx.productVariant.update({
             where: { id: variant.id },
             data: { ...data, ...(variant.stockAdjustment ? { stock: { increment: variant.stockAdjustment } } : {}) },
@@ -282,16 +287,10 @@ export async function saveProduct(payload: ProductPayload, decimals: number, act
           }
         } else {
           const created = await tx.productVariant.create({ data: { ...data, productId: id, stock: variant.stock }, select: { id: true } });
-          keepIds.add(created.id);
           if (variant.stock) {
             await tx.inventoryMovement.create({ data: { variantId: created.id, delta: variant.stock, stockAfter: variant.stock, reason: "RESTOCK", actorId, note: "Initial stock" } });
           }
         }
-      }
-      for (const old of current) {
-        if (keepIds.has(old.id)) continue;
-        if (old._count.orderItems > 0) await tx.productVariant.update({ where: { id: old.id }, data: { isActive: false, sku: null, position: 999 } });
-        else await tx.productVariant.delete({ where: { id: old.id } });
       }
 
       // Personalization fields
@@ -314,7 +313,8 @@ export async function saveProduct(payload: ProductPayload, decimals: number, act
           keptFields.add(field.id);
           await tx.personalizationField.update({ where: { id: field.id }, data });
         } else {
-          await tx.personalizationField.create({ data: { ...data, productId: id } });
+          const created = await tx.personalizationField.create({ data: { ...data, productId: id }, select: { id: true } });
+          keptFields.add(created.id);
         }
       }
       await tx.personalizationField.deleteMany({ where: { productId: id, id: { notIn: [...keptFields] } } });
