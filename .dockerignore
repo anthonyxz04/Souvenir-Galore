@@ -1,0 +1,16 @@
+.git
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+storage
+storage-e2e
+backups
+coverage
+playwright-report
+test-results
+blob-report
+*.log
+.DS_Store

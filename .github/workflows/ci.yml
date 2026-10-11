@@ -1,0 +1,60 @@
+# Runs every check against real packages and a real PostgreSQL database:
+# unit tests, production build, type check, integration tests and the
+# Playwright end-to-end journeys (customer and admin). Credentials below are
+# throwaway values for the temporary CI database only.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: souvenir
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: souvenir_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U souvenir -d souvenir_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CI: "true"
+      TEST_DATABASE_URL: postgresql://souvenir:ci-only-password@localhost:5432/souvenir_test?schema=public
+      DATABASE_URL: postgresql://souvenir:ci-only-password@localhost:5432/souvenir_test?schema=public
+      APP_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      APP_URL: http://localhost:3100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Type check
+        run: npm run typecheck
+      - name: Integration tests (real database)
+        run: npm run test:integration
+      - name: Install Chromium for end-to-end tests
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests (customer and admin journeys)
+        run: npm run test:e2e
+      - name: Keep test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

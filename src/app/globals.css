@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/*
+ * Souvenir Galore design tokens
+ * ─────────────────────────────
+ * Materials of the workshop: Lebanese limestone and chalky plaster for the
+ * ground, olive for the brand (olive branches are a staple of Lebanese wedding
+ * favors), beeswax for warmth, and a deep wine for sales and errors.
+ * Contrast (WCAG): ink 12:1, ink-soft 6:1, olive 7.7:1, wax-ink 4.6:1 on limestone.
+ */
+@theme {
+  --color-limestone: #eee8df;
+  --color-limestone-deep: #e4dccf;
+  --color-plaster: #f9f6f1;
+  --color-ink: #2b2724;
+  --color-ink-soft: #5e554d;
+  --color-line: #d9cfc2;
+  --color-line-strong: #bfb3a3;
+  --color-olive: #3e4a2f;
+  --color-olive-deep: #2c3521;
+  --color-olive-soft: #e4e7da;
+  --color-wax: #c08a2d;
+  --color-wax-ink: #8a5f17;
+  --color-wax-soft: #f1e2c4;
+  --color-wine: #8c2f39;
+  --color-wine-soft: #f4e1e2;
+  --color-sky-soft: #dfe7ea;
+  --color-sky-ink: #2f5563;
+
+  --font-display: var(--font-marcellus), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Type scale (classical: 12 14 16 18 21 24 30 36 48 60 72) */
+  --text-display-xl: 4.5rem;
+  --text-display-xl--line-height: 1.02;
+  --text-display-lg: 3.75rem;
+  --text-display-lg--line-height: 1.05;
+  --text-display: 3rem;
+  --text-display--line-height: 1.08;
+  --text-title: 2.25rem;
+  --text-title--line-height: 1.12;
+  --text-subtitle: 1.5rem;
+  --text-subtitle--line-height: 1.25;
+
+  --radius-image: 6px;
+  --radius-field: 10px;
+
+  --shadow-lift: 0 1px 2px rgb(43 39 36 / 0.06), 0 8px 24px -12px rgb(43 39 36 / 0.25);
+
+  --animate-letter-in: letter-in 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes letter-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.18em);
+      filter: blur(2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    background-color: var(--color-limestone);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--color-wax-soft);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-olive);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+  }
+
+  summary {
+    cursor: pointer;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Long-form content written in the admin (policies, product descriptions). */
+  .prose-sg {
+    max-width: 68ch;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-ink);
+  }
+  .prose-sg > * + * {
+    margin-top: 1em;
+  }
+  .prose-sg h2 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin-top: 2em;
+  }
+  .prose-sg h3 {
+    font-family: var(--font-display);
+    font-size: 1.3125rem;
+    margin-top: 1.6em;
+  }
+  .prose-sg ul,
+  .prose-sg ol {
+    padding-left: 1.25em;
+  }
+  .prose-sg ul {
+    list-style: disc;
+  }
+  .prose-sg ol {
+    list-style: decimal;
+  }
+  .prose-sg li + li {
+    margin-top: 0.35em;
+  }
+  .prose-sg a {
+    color: var(--color-olive);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-sg strong {
+    font-weight: 600;
+  }
+  .prose-sg blockquote {
+    border-left: 2px solid var(--color-wax);
+    padding-left: 1em;
+    color: var(--color-ink-soft);
+  }
+  .prose-sg table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .prose-sg th,
+  .prose-sg td {
+    border-bottom: 1px solid var(--color-line);
+    padding: 0.5em 0.25em;
+    text-align: left;
+  }
+  .prose-sg hr {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 2em 0;
+  }
+
+  /* Visually hidden but available to screen readers */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Kraft gift tag used by the hero personalization moment */
+  .gift-tag {
+    background:
+      radial-gradient(circle at 18px 50%, var(--color-limestone) 0 7px, transparent 7.5px),
+      linear-gradient(135deg, #d9bf94, #c9a876);
+    clip-path: polygon(0 18%, 9% 0, 100% 0, 100% 100%, 9% 100%, 0 82%);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
+  }
+}
+@keyframes sheet-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes sheet-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

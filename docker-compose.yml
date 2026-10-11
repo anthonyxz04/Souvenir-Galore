@@ -1,0 +1,72 @@
+# Single-server deployment: PostgreSQL + the app (+ optional Caddy for HTTPS).
+#
+#   cp .env.example .env        # fill in values, including POSTGRES_PASSWORD
+#   docker compose up -d --build
+#   docker compose exec app npm run db:seed
+#   docker compose exec app npm run admin:create
+#
+# With a domain pointing at this server, add automatic HTTPS:
+#   DOMAIN=shop.example.com docker compose --profile https up -d
+#
+# See docs/DEPLOYMENT.md and docs/BACKUP.md.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: souvenir
+      POSTGRES_DB: souvenir_galore
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U souvenir -d souvenir_galore"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Not published to the host. For local development only, uncomment:
+    # ports: ["127.0.0.1:5432:5432"]
+
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+        NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-}
+        NEXT_PUBLIC_PLAUSIBLE_SRC: ${NEXT_PUBLIC_PLAUSIBLE_SRC:-}
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: ${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # URL-encode POSTGRES_PASSWORD if it contains characters like @ : / ? #
+      DATABASE_URL: postgresql://souvenir:${POSTGRES_PASSWORD}@db:5432/souvenir_galore?schema=public
+      STORAGE_LOCAL_DIR: /app/storage
+    volumes:
+      - uploads:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Bound to localhost: put a reverse proxy with HTTPS in front (the
+      # "https" profile below, or your own Nginx/Caddy).
+      - "127.0.0.1:3000:3000"
+
+  caddy:
+    profiles: ["https"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    # Obtains and renews a certificate for DOMAIN automatically.
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to app:3000
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+    depends_on:
+      - app
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
