@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 import { parseMoney } from "@/lib/money";
+import { instagramUsername, whatsappNumber } from "@/lib/text";
 import { getAllSettings, saveSettings } from "@/lib/settings";
 import type { SettingsKey } from "@/lib/settings/schemas";
 import { checkbox, errorState, zodFieldErrors, type FormState } from "@/lib/validation/forms";
@@ -28,8 +29,8 @@ async function buildSettings(group: SettingsKey, formData: FormData): Promise<{ 
         value: {
           email: str(formData, "email"),
           phone: str(formData, "phone"),
-          whatsapp: str(formData, "whatsapp").replace(/[\s+()-]/g, ""),
-          instagram: str(formData, "instagram").replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/$/, ""),
+          whatsapp: whatsappNumber(str(formData, "whatsapp")),
+          instagram: instagramUsername(str(formData, "instagram")),
           facebookUrl: str(formData, "facebookUrl"),
           tiktokUrl: str(formData, "tiktokUrl"),
           address: str(formData, "address"),

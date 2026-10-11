@@ -77,3 +77,29 @@ export function safeRedirectPath(target: string | null | undefined, fallback = "
   if (!target.startsWith("/") || target.startsWith("//") || target.startsWith("/\\")) return fallback;
   return target;
 }
+
+/**
+ * Instagram username from what an owner might paste: "name", "@name" or a
+ * profile link, including the tracking query string Instagram's share button
+ * adds (e.g. "https://www.instagram.com/name?igsh=...").
+ */
+export function instagramUsername(input: string): string {
+  return input
+    .trim()
+    .replace(/[?#].*$/, "")
+    .replace(/^@/, "")
+    .replace(/^(https?:\/\/)?(www\.|m\.)?instagram\.com\//i, "")
+    .replace(/\/+$/, "");
+}
+
+/**
+ * WhatsApp number as wa.me expects it: digits only, with the country code.
+ * A Lebanese number typed without it ("76 620 434", "03 123 456") gets 961.
+ */
+export function whatsappNumber(input: string): string {
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  const local = digits.replace(/^0/, "");
+  if (!digits.startsWith("961") && (local.length === 7 || local.length === 8)) return `961${local}`;
+  return digits;
+}

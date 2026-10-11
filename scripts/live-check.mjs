@@ -197,6 +197,20 @@ for (const vp of viewports) {
     await page.close();
   }
 
+  // Contact details from the dashboard settings appear as working links.
+  if (vp.name === "desktop") {
+    const page = await context.newPage();
+    try {
+      await page.goto(base + "/contact", { waitUntil: "networkidle" });
+      const hrefs = await page.$$eval("main a[href]", (as) => as.map((a) => a.getAttribute("href") || ""));
+      const contactLinks = [...new Set(hrefs.filter((h) => /^(mailto:|tel:|https:\/\/wa\.me\/|https:\/\/ig\.me\/|https:\/\/(www\.)?instagram\.com\/)/.test(h)))];
+      record("Contact page shows contact links", contactLinks.length > 0, contactLinks.join(" ") || "none set in Settings yet");
+    } catch (error) {
+      record("Contact page shows contact links", false, String(error).slice(0, 300));
+    }
+    await page.close();
+  }
+
   // Mobile menu opens and lists categories
   if (vp.name === "mobile") {
     const page = await context.newPage();

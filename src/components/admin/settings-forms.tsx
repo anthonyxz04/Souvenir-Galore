@@ -48,8 +48,8 @@ export function ContactSettingsForm({ settings }: { settings: AllSettings["conta
           <div className="grid gap-5 sm:grid-cols-2">
             <InputField name="email" label="Email" optional type="email" defaultValue={s.values?.email ?? settings.email} error={s.fieldErrors?.email} />
             <InputField name="phone" label="Phone" optional defaultValue={s.values?.phone ?? settings.phone} error={s.fieldErrors?.phone} />
-            <InputField name="whatsapp" label="WhatsApp number" optional inputMode="numeric" defaultValue={s.values?.whatsapp ?? settings.whatsapp} error={s.fieldErrors?.whatsapp} hint="With country code, digits only: 961 then the number." />
-            <InputField name="instagram" label="Instagram username" optional defaultValue={s.values?.instagram ?? settings.instagram} error={s.fieldErrors?.instagram} hint="Without @" />
+            <InputField name="whatsapp" label="WhatsApp number" optional inputMode="numeric" defaultValue={s.values?.whatsapp ?? settings.whatsapp} error={s.fieldErrors?.whatsapp} hint="Your number with the country code, e.g. 961 76 123 456. A Lebanese number without 961 gets it added." />
+            <InputField name="instagram" label="Instagram username" optional defaultValue={s.values?.instagram ?? settings.instagram} error={s.fieldErrors?.instagram} hint="The username, or paste your profile link." />
             <InputField name="facebookUrl" label="Facebook page link" optional type="url" defaultValue={s.values?.facebookUrl ?? settings.facebookUrl} error={s.fieldErrors?.facebookUrl} />
             <InputField name="tiktokUrl" label="TikTok link" optional type="url" defaultValue={s.values?.tiktokUrl ?? settings.tiktokUrl} error={s.fieldErrors?.tiktokUrl} />
           </div>

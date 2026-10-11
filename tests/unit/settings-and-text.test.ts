@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseSettings } from "@/lib/settings/schemas";
-import { isValidSlug, safeHref, slugify, stripControlChars } from "@/lib/text";
+import { instagramUsername, isValidSlug, safeHref, slugify, stripControlChars, whatsappNumber } from "@/lib/text";
 
 describe("settings defaults", () => {
   it("provides safe defaults with no contact details invented", () => {
@@ -49,5 +49,30 @@ describe("text helpers", () => {
   it("strips control characters", () => {
     expect(stripControlChars("a\u0000b\u0007c")).toBe("abc");
     expect(stripControlChars("a\nb", true)).toBe("a\nb");
+  });
+});
+
+describe("contact details typed by the owner", () => {
+  it("turns an Instagram profile link or @name into the username", () => {
+    expect(instagramUsername("https://www.instagram.com/souvenir.galore?igsh=abc123")).toBe("souvenir.galore");
+    expect(instagramUsername("instagram.com/souvenir.galore/")).toBe("souvenir.galore");
+    expect(instagramUsername("@souvenir.galore")).toBe("souvenir.galore");
+    expect(instagramUsername("souvenir.galore")).toBe("souvenir.galore");
+  });
+
+  it("adds Lebanon's country code to a local WhatsApp number", () => {
+    expect(whatsappNumber("76 620 434")).toBe("96176620434");
+    expect(whatsappNumber("03 123 456")).toBe("9613123456");
+    expect(whatsappNumber("+961 76 620 434")).toBe("96176620434");
+    expect(whatsappNumber("00961 76 620 434")).toBe("96176620434");
+    expect(whatsappNumber("+44 20 7946 0958")).toBe("442079460958");
+    expect(whatsappNumber("")).toBe("");
+  });
+
+  it("saved values pass the settings rules", () => {
+    const contact = parseSettings("contact", { email: "souvenirgalore@outlook.com", phone: "+961 76 620 434", whatsapp: whatsappNumber("76620434"), instagram: instagramUsername("https://www.instagram.com/souvenir.galore?exln=x") });
+    expect(contact.whatsapp).toBe("96176620434");
+    expect(contact.instagram).toBe("souvenir.galore");
+    expect(contact.email).toBe("souvenirgalore@outlook.com");
   });
 });
