@@ -10,7 +10,7 @@ import { createSession, destroyCurrentSession, getCurrentUser } from "@/lib/auth
 import { mergeGuestCart } from "@/lib/cart/service";
 import { sendEmail } from "@/lib/email";
 import { passwordChangedEmail, passwordResetEmail, verificationEmail } from "@/lib/email/templates";
-import { checkLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
+import { checkLimit, clearLimit, isLimited, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 import { getRequestMeta } from "@/lib/request";
 import { getSettings } from "@/lib/settings";
 import { checkSpam, spamMessage } from "@/lib/spam";
@@ -23,15 +23,19 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
 
   const { ip, userAgent } = await getRequestMeta();
   const ipKey = hashIp(ip);
-  const [ipOk, accountOk] = await Promise.all([checkLimit("loginPerIp", ipKey), checkLimit("loginPerAccount", parsed.data.email)]);
-  if (!ipOk || !accountOk) return errorState(RATE_LIMIT_MESSAGE, undefined, formData);
+  // Every attempt from one address counts; for one account only wrong
+  // passwords count, so the owner signing in often is never locked out.
+  const [ipOk, accountLocked] = await Promise.all([checkLimit("loginPerIp", ipKey), isLimited("loginPerAccount", parsed.data.email)]);
+  if (!ipOk || accountLocked) return errorState(RATE_LIMIT_MESSAGE, undefined, formData);
 
   const user = await authenticate(parsed.data.email, parsed.data.password);
   if (!user) {
+    await checkLimit("loginPerAccount", parsed.data.email);
     await logAudit({ actor: null, action: "auth.login_failed", entityType: "User", summary: "Failed sign-in attempt", ipHash: ipKey, metadata: { email: parsed.data.email } });
     return errorState("The email or password is incorrect.", undefined, formData);
   }
 
+  await clearLimit("loginPerAccount", parsed.data.email);
   await createSession(user.id, user.role, userAgent);
   await mergeGuestCart(user.id);
   if (isStaffRole(user.role)) {

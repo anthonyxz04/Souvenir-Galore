@@ -88,6 +88,12 @@ jobs:
               tail -c 9000 "ci-logs/$name.log" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
               printf '\n```\n'
             done
+            # What the page looked like when each browser test failed (accessibility snapshot).
+            for f in $(ls test-results/*/error-context.md 2>/dev/null | grep -v retry | head -6); do
+              printf '\n### %s\n```\n' "$f"
+              head -c 3500 "$f"
+              printf '\n```\n'
+            done
           } | head -c 64000 > ci-logs/comment.md
           gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@ci-logs/comment.md > /dev/null
       - name: Keep test reports

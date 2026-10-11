@@ -130,17 +130,33 @@ const viewports = [
 ];
 const shotPages = new Set(["home", "shop", "custom-order", "contact", "cart", "login", "policy-delivery"]);
 const internalLinks = new Set();
+let netlifyBadgeBlocked = false;
 
 for (const vp of viewports) {
   const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: vp.isMobile, hasTouch: vp.hasTouch });
   for (const [url, slug] of pages) {
     const page = await context.newPage();
     const errors = [];
-    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on("console", (m) => {
+      if (m.type() !== "error") return;
+      // Netlify injects its optional "Powered by Netlify" badge script into
+      // free-plan projects; the site's security policy blocks it by design.
+      if (/\/\.netlify\/scripts\//.test(m.text())) netlifyBadgeBlocked = true;
+      else errors.push(m.text());
+    });
     page.on("pageerror", (e) => errors.push(String(e)));
     try {
-      const res = await page.goto(base + url, { waitUntil: "networkidle", timeout: 45000 });
-      const status = res ? res.status() : 0;
+      let res = await page.goto(base + url, { waitUntil: "networkidle", timeout: 45000 });
+      let status = res ? res.status() : 0;
+      let retried = "";
+      if ([403, 429, 500, 502, 503, 504].includes(status)) {
+        // One retry, so a momentary CDN or cold-start response is reported as such.
+        await page.waitForTimeout(3000);
+        errors.length = 0;
+        res = await page.goto(base + url, { waitUntil: "networkidle", timeout: 45000 });
+        retried = ` (first response ${status}, retried)`;
+        status = res ? res.status() : 0;
+      }
       const title = await page.title();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       const setup = await page.getByText("almost ready").count();
@@ -150,7 +166,7 @@ for (const vp of viewports) {
       if (setup) problems.push("setup-required page");
       if (overflow > 1) problems.push(`scrolls sideways by ${overflow}px`);
       if (errors.length) problems.push(`console errors: ${errors.slice(0, 2).join(" | ").slice(0, 300)}`);
-      record(`[${vp.name}] ${url}`, problems.length === 0, problems.join("; ") || `"${title}"`);
+      record(`[${vp.name}] ${url}`, problems.length === 0, (problems.join("; ") || `"${title}"`) + retried);
       if (shotPages.has(slug)) {
         await page.screenshot({ path: path.join(outDir, "screenshots", `${vp.name}-${slug}.png`), fullPage: vp.name === "mobile" ? false : true });
       }
@@ -173,6 +189,7 @@ for (const vp of viewports) {
       await button.click();
       const dialog = page.getByRole("dialog").first();
       await dialog.waitFor({ state: "visible", timeout: 5000 });
+      await page.waitForTimeout(800); // let the slide-in animation finish
       const links = await dialog.locator("a[href]").count();
       record("[mobile] Menu opens with links", links > 3, `${links} links`);
       await page.screenshot({ path: path.join(outDir, "screenshots", "mobile-menu-open.png") });
@@ -201,7 +218,11 @@ for (const href of [...internalLinks].sort()) {
 }
 record("Internal links checked", results.filter((r) => r.name.startsWith("Link ") && !r.ok).length === 0, `${checked} links`);
 
+if (netlifyBadgeBlocked) {
+  console.log("::notice title=Netlify badge::Netlify's optional 'Powered by Netlify' badge script is blocked by the site's Content Security Policy. Harmless; turn the badge off in Project configuration > General to remove the console message.");
+}
+
 const failed = results.filter((r) => !r.ok);
-fs.writeFileSync(path.join(outDir, "results.json"), JSON.stringify({ url: base, checkedAt: new Date().toISOString(), passed: results.length - failed.length, failed: failed.length, results }, null, 2));
+fs.writeFileSync(path.join(outDir, "results.json"), JSON.stringify({ url: base, checkedAt: new Date().toISOString(), netlifyBadgeBlocked, passed: results.length - failed.length, failed: failed.length, results }, null, 2));
 console.log(`::notice title=Live check::${results.length - failed.length} passed, ${failed.length} failed (${base})`);
 process.exit(failed.length ? 1 : 0);

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { AccountError, authenticate, consumeAuthToken, createUser, deleteCustomerAccount, issueAuthToken, resetPasswordWithToken } from "@/lib/auth/service";
-import { rateLimit } from "@/lib/rate-limit";
+import { checkLimit, clearLimit, isLimited, rateLimit } from "@/lib/rate-limit";
 import { hasDatabase, resetDatabase } from "./helpers";
 
 describe.skipIf(!hasDatabase)("accounts and security (real database)", () => {
@@ -61,6 +61,16 @@ describe.skipIf(!hasDatabase)("accounts and security (real database)", () => {
     const results = [];
     for (let i = 0; i < 4; i += 1) results.push((await rateLimit("test:key", 3, 60)).ok);
     expect(results).toEqual([true, true, true, false]);
+  });
+
+  it("locks an account only after repeated wrong passwords, and a sign-in clears it", async () => {
+    const email = "owner@example.com";
+    expect(await isLimited("loginPerAccount", email)).toBe(false);
+    for (let i = 0; i < 6; i += 1) await checkLimit("loginPerAccount", email); // six wrong passwords
+    expect(await isLimited("loginPerAccount", email)).toBe(true);
+    expect(await isLimited("loginPerAccount", email)).toBe(true); // checking doesn't count
+    await clearLimit("loginPerAccount", email);
+    expect(await isLimited("loginPerAccount", email)).toBe(false);
   });
 
   it("deletes customer accounts by removing personal data but keeping orders", async () => {

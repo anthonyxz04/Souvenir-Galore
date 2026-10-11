@@ -130,7 +130,7 @@ test.describe.serial("customer features", () => {
     await page.getByRole("link", { name: shopperOrder }).click();
     await page.getByLabel("Move to").selectOption({ label: "Confirmed" });
     await page.getByRole("button", { name: "Update status" }).click();
-    await expect(page.getByRole("status")).toContainText("Order marked as confirmed.");
+    await expect(page.getByRole("status").filter({ hasText: "Order marked as confirmed." })).toBeVisible();
 
     await page.context().clearCookies();
     await signIn(page, shopper.email, shopper.password);
@@ -148,7 +148,7 @@ test("custom-order requests are saved and reach the dashboard", async ({ page })
   await page.getByLabel("Email").fill(`request-${Date.now()}@e2e.test`);
   await humanPause(page);
   await page.getByRole("button", { name: "Send request" }).click();
-  const confirmation = page.getByRole("status");
+  const confirmation = page.getByRole("status").filter({ hasText: /was sent/i });
   await expect(confirmation).toContainText(/your request CR-?\S+ was sent/i);
   await expect(confirmation).toContainText("This isn't an order yet");
 
@@ -183,7 +183,7 @@ test.describe.serial("admin manages the store", () => {
     await page.goto(editUrl);
     await page.getByLabel("Price", { exact: true }).fill("19.50");
     await page.getByRole("button", { name: "Save product" }).click();
-    await expect(page.getByRole("status")).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /saved/i }).first()).toBeVisible();
     await page.goto("/products/e2e-fig-candle");
     await page.reload();
     await expect(page.getByText("$19.50").first()).toBeVisible();
@@ -205,7 +205,7 @@ test.describe.serial("admin manages the store", () => {
     await page.getByLabel("WhatsApp number").fill("96170000000");
     await page.getByLabel("Instagram username").fill("e2e.workshop");
     await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(page.getByRole("status")).toContainText("Settings saved.");
+    await expect(page.getByRole("status").filter({ hasText: "Settings saved." })).toBeVisible();
 
     await page.goto(`/products/${E2E.product.slug}`);
     const main = page.getByRole("main");
@@ -219,6 +219,6 @@ test.describe.serial("admin manages the store", () => {
     await page.getByLabel("WhatsApp number").fill("");
     await page.getByLabel("Instagram username").fill("");
     await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(page.getByRole("status")).toContainText("Settings saved.");
+    await expect(page.getByRole("status").filter({ hasText: "Settings saved." })).toBeVisible();
   });
 });

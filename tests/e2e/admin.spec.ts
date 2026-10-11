@@ -17,17 +17,18 @@ test.describe.serial("admin dashboard", () => {
   test("Whish Money can't be enabled until its details are filled in", async ({ page }) => {
     await page.goto("/admin/payments");
     await expect(page.getByText("Needs: Payment instructions for customers, Account holder name, Whish account / phone number")).toBeVisible();
-    await page.getByRole("link", { name: "Whish Money", exact: true }).click();
+    // The existing method (not the "Add a payment method" button with the same name).
+    await page.locator('a[href^="/admin/payments/"]:not([href*="/new"])', { hasText: /^Whish Money$/ }).click();
     await page.getByLabel("Offer this method at checkout").check();
     await page.getByRole("button", { name: "Save payment method" }).click();
-    await expect(page.getByRole("alert")).toContainText("can't be turned on yet");
+    await expect(page.getByRole("alert").filter({ hasText: "can't be turned on yet" })).toBeVisible();
 
     await page.getByLabel("Account holder name").fill("Test Owner");
     await page.getByLabel("Whish account / phone number").fill("00000000");
     await page.getByLabel("Payment instructions").fill("Send the total in USD and enter the transaction reference on your order page.");
     await page.getByLabel("Offer this method at checkout").check();
     await page.getByRole("button", { name: "Save payment method" }).click();
-    await expect(page.getByRole("status")).toContainText("Customers can now choose this method");
+    await expect(page.getByRole("status").filter({ hasText: "Customers can now choose this method" })).toBeVisible();
   });
 
   test("create a category", async ({ page }) => {
@@ -57,7 +58,7 @@ test.describe.serial("admin dashboard", () => {
     await page.goto("/admin/orders?payment=UNPAID");
     await page.getByRole("link", { name: /SG-\d+/ }).first().click();
     await page.getByRole("button", { name: "Record cash received" }).click();
-    await expect(page.getByRole("status")).toContainText("marked as paid");
+    await expect(page.getByRole("status").filter({ hasText: "marked as paid" })).toBeVisible();
     await expect(page.getByText("Paid", { exact: true }).first()).toBeVisible();
   });
 

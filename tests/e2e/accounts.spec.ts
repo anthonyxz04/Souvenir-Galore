@@ -18,8 +18,9 @@ test.describe.serial("customer accounts", () => {
   });
 
   test("wrong password shows a generic error", async ({ page }) => {
-    await signIn(page, E2E.customer.email, "not-the-right-password");
-    await expect(page.getByRole("alert")).toContainText("The email or password is incorrect.");
+    await signIn(page, E2E.customer.email, "not-the-right-password", "", { expectSuccess: false });
+    // Next.js also renders an (empty) role="alert" route announcer, so match by text.
+    await expect(page.getByRole("alert").filter({ hasText: "The email or password is incorrect." })).toBeVisible();
   });
 
   test("password reset never reveals whether an account exists", async ({ page }) => {
@@ -27,7 +28,7 @@ test.describe.serial("customer accounts", () => {
       await page.goto("/forgot-password");
       await page.getByLabel("Email").fill(email);
       await page.getByRole("button", { name: "Send reset link" }).click();
-      await expect(page.getByRole("status")).toContainText("If an account exists for that email");
+      await expect(page.getByRole("status").filter({ hasText: "If an account exists for that email" })).toBeVisible();
     }
   });
 

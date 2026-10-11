@@ -31,6 +31,7 @@ export async function rateLimit(
 /** Preset limits for sensitive endpoints. */
 export const LIMITS = {
   loginPerIp: { limit: 20, window: 15 * 60 },
+  /** Wrong passwords for one account (successful sign-ins don't count). */
   loginPerAccount: { limit: 6, window: 15 * 60 },
   register: { limit: 5, window: 60 * 60 },
   passwordResetPerIp: { limit: 10, window: 60 * 60 },
@@ -53,6 +54,23 @@ export async function checkLimit(
   const preset = LIMITS[scope];
   const result = await rateLimit(`${scope}:${identifier}`, preset.limit, preset.window);
   return result.ok;
+}
+
+/**
+ * True when the counter for this key has already reached its limit in the
+ * current window. Reads without counting, for limits that should only count
+ * failures (e.g. wrong passwords for one account).
+ */
+export async function isLimited(scope: keyof typeof LIMITS, identifier: string | null): Promise<boolean> {
+  if (!identifier) return false;
+  const row = await prisma.rateLimit.findUnique({ where: { key: `${scope}:${identifier}` }, select: { count: true, resetAt: true } });
+  return !!row && row.resetAt.getTime() > Date.now() && row.count >= LIMITS[scope].limit;
+}
+
+/** Forget the counter for this key (e.g. after a successful sign-in). */
+export async function clearLimit(scope: keyof typeof LIMITS, identifier: string | null): Promise<void> {
+  if (!identifier) return;
+  await prisma.rateLimit.deleteMany({ where: { key: `${scope}:${identifier}` } });
 }
 
 export const RATE_LIMIT_MESSAGE = "Too many attempts. Please wait a few minutes and try again.";
