@@ -105,7 +105,8 @@ await fetchCheck("Cleanup job refuses requests without its secret", "/api/cron/c
 await fetchCheck("Search suggestions API", "/api/search/suggest?q=gift", { expectType: "application/json" });
 
 // 4. Pages in a real browser: status, title, console errors, sideways scrolling
-const browser = await chromium.launch();
+// Software WebGL so the 3D candle preview can be checked on machines without a GPU.
+const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const pages = [
   ["/", "home"],
   ["/shop", "shop"],
@@ -228,6 +229,48 @@ for (const vp of viewports) {
       record("[mobile] Menu opens with links", false, String(error).slice(0, 300));
     }
     await page.close();
+  }
+  await context.close();
+}
+
+// 3D candle preview: find a product that has one (if any) and check it draws
+// and follows typed text. Nothing is submitted.
+{
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  try {
+    await page.goto(base + "/shop", { waitUntil: "networkidle" });
+    const productLinks = [...new Set(await page.$$eval('a[href^="/products/"]', (as) => as.map((a) => a.getAttribute("href"))))].slice(0, 24);
+    let found = null;
+    for (const href of productLinks) {
+      await page.goto(base + href, { waitUntil: "domcontentloaded" });
+      if (await page.locator("[data-candle-preview]").count()) {
+        found = href;
+        break;
+      }
+    }
+    if (!found) {
+      record("3D preview", true, productLinks.length ? "no product has the 3D preview turned on yet" : "no products in the shop yet");
+    } else {
+      const preview = page.locator("[data-candle-preview]");
+      await preview.waitFor({ state: "attached" });
+      await page.waitForFunction(() => document.querySelector("[data-candle-preview]")?.getAttribute("data-candle-preview") !== "loading", null, { timeout: 30000 });
+      const state = await preview.getAttribute("data-candle-preview");
+      const textField = page.locator('form input[type="text"][name^="p_"]').first();
+      let follows = "no text field";
+      if (state === "ready" && (await textField.count())) {
+        await textField.fill("Live check");
+        await page.waitForTimeout(500);
+        const label = (await preview.getAttribute("aria-label")) ?? "";
+        follows = label.includes("Live check") ? "label follows typed text" : "label did not update";
+        await page.screenshot({ path: path.join(outDir, "screenshots", "desktop-3d-preview.png") });
+      }
+      record(`3D preview draws on ${found}`, state === "ready" && follows !== "label did not update" && errors.length === 0, `${state}; ${follows}${errors.length ? `; errors: ${errors.slice(0, 2).join(" | ")}` : ""}`);
+    }
+  } catch (error) {
+    record("3D preview", false, String(error).slice(0, 300));
   }
   await context.close();
 }
