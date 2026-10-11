@@ -4,38 +4,34 @@ Work through this list before taking real orders. Items marked **Owner** need de
 
 ## 1. Verify the code (Developer)
 
-- [ ] `npm install` on a machine with internet access; commit `package-lock.json`.
-- [ ] `npx prisma migrate dev --name init`; commit `prisma/migrations/`.
-- [ ] `npm run typecheck` passes.
-- [ ] `npm test` passes.
-- [ ] `npm run test:integration` passes against a throwaway test database.
-- [ ] `npm run test:e2e` passes.
-- [ ] `npm run build` succeeds.
+GitHub Actions runs all of these on every push (see [TESTING.md](TESTING.md#verification-status-of-this-codebase)). Check that the latest run on `main` is green:
+
+- [ ] Unit tests, type check and production build pass.
+- [ ] Netlify Database migrations match `prisma/schema.prisma`.
+- [ ] Integration tests (real PostgreSQL) pass.
+- [ ] End-to-end tests (Chromium) pass.
+- [ ] **Live site check** (Actions → Live site check → Run workflow) passes against the production address.
 - [ ] `npm audit` reviewed.
 
-See [TESTING.md](TESTING.md#verification-status-of-this-codebase) for why these must be run.
+## 2. Hosting (Netlify)
 
-## 2. Accounts and hosting (Owner and Developer)
+See [NETLIFY.md](NETLIFY.md).
 
-- [ ] Domain registered, DNS access available.
-- [ ] Hosting set up (Vercel Pro, or a VPS with Docker). See [DEPLOYMENT.md](DEPLOYMENT.md).
-- [ ] Managed PostgreSQL with **automatic backups and point-in-time restore** turned on.
-- [ ] Object storage: **public** bucket with a CDN or custom domain, plus a **private** bucket for customer uploads.
-- [ ] SMTP provider set up with the domain verified (SPF, DKIM and DMARC records added).
-- [ ] All environment variables set in production. Copies of the secrets are kept in a password manager.
-- [ ] `APP_URL` is the final `https://` domain; HTTPS works; `www` redirects to the main domain (or the reverse).
-- [ ] `TRUST_PROXY=true` behind the host or proxy.
-- [ ] Repository is **private**; `.env` has never been committed (`git log --all -- .env` shows nothing).
+- [ ] The Netlify project is linked to the GitHub repository; pushes to `main` publish the site.
+- [ ] `APP_SECRET`, `CRON_SECRET` and `SETUP_TOKEN` are set as **secret** values for Production, and `STORAGE_DRIVER=netlify` is set. Copies are kept in a password manager.
+- [ ] Visitor access: team-login protection is **off** for production.
+- [ ] Netlify Database is active (Data & Storage → Database), and credit usage is checked under Team settings → Billing.
+- [ ] SMTP provider set up with the domain verified (SPF, DKIM and DMARC records added), and the `SMTP_*` variables set.
+- [ ] Optional: your own domain added under Domain management (HTTPS is automatic), then one redeploy.
+- [ ] `.env` has never been committed (`git log --all -- .env` shows nothing). The repository can be public because it contains no secrets, but making it private is a good habit.
 
-## 3. First run (Developer)
+## 3. First run
 
-- [ ] Migrations applied (`npm run db:deploy`, or automatically on deploy or start).
-- [ ] `npm run db:seed` run once.
-- [ ] Owner account created with `npm run admin:create`, using a strong, unique password.
-- [ ] `https://yourdomain.com/api/health` returns `{"ok":true}`; uptime monitor added.
-- [ ] Daily cleanup scheduled (Vercel cron with `CRON_SECRET`, or a crontab on the server).
-- [ ] Off-site database backups scheduled; **one restore tested** ([BACKUP.md](BACKUP.md)).
-- [ ] Demo products removed (`npm run db:demo:remove`) if they were ever added. The dashboard shows a red warning while any remain.
+- [ ] Owner account created from the one-time link `https://<your-site>/setup-owner?token=<SETUP_TOKEN>`, with a strong, unique password. Then delete `SETUP_TOKEN` in Netlify.
+- [ ] `https://<your-site>/api/health` returns `{"ok":true}`; uptime monitor added.
+- [ ] Daily cleanup: `netlify/functions/daily-cleanup.mts` runs automatically once `CRON_SECRET` is set. Check its log under Logs → Functions the day after launch.
+- [ ] Backups: take a database snapshot before big changes (Data & Storage → Database). For off-site copies, see [BACKUP.md](BACKUP.md).
+- [ ] Sample products removed (Dashboard → **Remove sample products**) if they were ever added. The dashboard shows a red warning while any remain.
 
 ## 4. Store settings (Owner)
 

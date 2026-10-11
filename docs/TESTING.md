@@ -18,7 +18,7 @@ Run everything with `npm run test:all`. Also run `npm run typecheck` and `npm ru
 
 ## What each suite covers
 
-### Unit: `tests/unit` (110 tests)
+### Unit: `tests/unit`
 
 | File | What it checks |
 |---|---|
@@ -60,37 +60,22 @@ Playwright builds the app (`npm run build`) and starts it on port 3100, using lo
 
 ## Verification status of this codebase
 
-The code was written in an environment where the npm registry was blocked, so the project's dependencies (Next.js, Prisma, Vitest, Playwright and others) couldn't be installed there. This is exactly what was and wasn't executed:
+Every push to GitHub runs the full suite with the real packages (Next.js 16, Prisma 6, Vitest, Playwright) and a real PostgreSQL 16 database. See the **Actions** tab of the repository for the latest results.
 
-| Check | Status | Details |
-|---|---|---|
-| Unit tests | ✅ **Executed: 110 passed, 0 failed** | Run with Bun's test runner, which is compatible with these Vitest-style tests, not with Vitest itself. Includes the real sharp image pipeline. |
-| TypeScript | ✅ **Executed: 0 errors**, including a strict mode where database query results are typed exactly as Prisma types them (only the selected fields) | Whole project (app, scripts, tests) under `strict`. It used real type definitions for React, Node and sharp, and Prisma types generated from `schema.prisma`; Next.js, Radix and a few other packages were replaced by stubs. Run `npm run typecheck` with the real packages to confirm. |
-| Raw SQL statements | ✅ **Executed** | Order numbering, the atomic discount counter, the rate-limit upsert and the analytics query were run against PostgreSQL 16. |
-| Backup and restore script | ✅ **Executed** | `scripts/backup.sh` backed up a PostgreSQL 16 database, and the dump was restored into an empty database and compared. |
-| Storefront rendering | ✅ **Rendered in Chromium** | The real header, homepage sections, 12 product pages, mobile menu markup and footer were rendered with sample data and the real Tailwind styles. There was no horizontal scrolling at phone or desktop widths and no console errors. Interactive behaviour (cart, forms, menus) wasn't exercised, because that needs the full app running. |
-| Netlify Blobs photo storage | ✅ **Executed** | The storage code ran with the real `@netlify/blobs` client library against a local stand-in for the Blobs service: write, read back, private/public separation, missing files, deletion and unsafe-key rejection. A real Netlify deploy hasn't happened yet. |
-| `docker-compose.yml` | ✅ Validated with `docker compose config` | The image itself wasn't built, because that needs the npm registry. |
-| `next build` | ❌ **Not executed** | Needs the real dependencies. |
-| Integration tests | ❌ **Not executed** | Need the Prisma client (the npm registry was blocked). |
-| End-to-end tests | ❌ **Not executed** | Need Next.js and Playwright's test runner. |
-| Initial migration | ❌ Not generated | Run `npx prisma migrate dev --name init` (see [SETUP.md](SETUP.md)). |
+| Check | Where it runs |
+|---|---|
+| Unit tests | GitHub Actions (`npm test`) |
+| Type check | GitHub Actions (`npm run typecheck`) |
+| Production build | GitHub Actions (`npm run build`) |
+| Netlify Database migrations | GitHub Actions: applied to an empty PostgreSQL 16 database, then `prisma migrate diff` confirms they match `prisma/schema.prisma` exactly |
+| Integration tests | GitHub Actions, against PostgreSQL 16 |
+| End-to-end tests | GitHub Actions, Chromium (desktop and mobile) against a production build |
+| Live site | **Actions → Live site check → Run workflow** (`scripts/live-check.mjs`): read-only checks of the production site in Chromium (database health, every main page on phone and desktop, internal links, icons, SEO files, security headers, admin/account protection). Results and screenshots are saved to the `live-check-results` branch. |
 
-**Before going live, on a machine with normal internet access:**
+When a CI check fails, the workflow posts the end of the failing log (and, for browser tests, a snapshot of the page) as a comment on the commit.
 
-```bash
-npm install
-npx prisma migrate dev --name init      # creates and commits the initial migration
-npm run typecheck
-npm test
-TEST_DATABASE_URL=postgresql://…/souvenir_galore_test npm run test:integration
-npx playwright install chromium
-TEST_DATABASE_URL=postgresql://…/souvenir_galore_test npm run test:e2e
-npm run build
-```
-
-Fix anything that fails before taking real orders. Expect a small number of adjustments the first time, because these suites haven't yet run against the real packages.
+Also checked by hand during development: `scripts/backup.sh` (backup and restore round trip on PostgreSQL 16) and `docker compose config`.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs everything on GitHub's servers on every push: unit tests, the production build, the type check, integration tests against a PostgreSQL 16 service, and the Playwright journeys. Push the project to a GitHub repository and the results appear under **Actions**.
+`.github/workflows/ci.yml` runs everything on GitHub's servers on every push: unit tests, the type check, the production build, the migration check, integration tests against a PostgreSQL 16 service, and the Playwright journeys. Every check runs even if an earlier one fails, so one run shows every problem. Results appear under **Actions**.

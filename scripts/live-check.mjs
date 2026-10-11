@@ -180,6 +180,23 @@ for (const vp of viewports) {
     await page.close();
   }
 
+  // Forms reach the server and the database: the password-reset form with a
+  // reserved example.com address only records a short-lived rate-limit counter
+  // (no account, email or other visible record is created).
+  if (vp.name === "desktop") {
+    const page = await context.newPage();
+    try {
+      await page.goto(base + "/forgot-password", { waitUntil: "networkidle" });
+      await page.getByLabel("Email").fill("live-check@example.com");
+      await page.getByRole("button", { name: "Send reset link" }).click();
+      await page.getByText("If an account exists for that email").first().waitFor({ timeout: 20000 });
+      record("Forms submit to the server (password-reset form)", true);
+    } catch (error) {
+      record("Forms submit to the server (password-reset form)", false, String(error).slice(0, 300));
+    }
+    await page.close();
+  }
+
   // Mobile menu opens and lists categories
   if (vp.name === "mobile") {
     const page = await context.newPage();
