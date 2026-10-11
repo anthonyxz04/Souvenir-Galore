@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { E2E } from "./data";
-import { humanPause, signIn } from "./helpers";
+import { addProductToCart, humanPause, signIn } from "./helpers";
 
 test.describe.serial("customer accounts", () => {
   test("register, see the account, and sign out", async ({ page }) => {
@@ -34,11 +34,12 @@ test.describe.serial("customer accounts", () => {
 
   test("signed-in customers check out with saved details and see order history", async ({ page }) => {
     await signIn(page, E2E.customer.email, E2E.customer.password);
-    await page.goto(`/products/${E2E.product.slug}`);
-    await page.getByRole("button", { name: "Add to cart" }).click();
+    await addProductToCart(page, E2E.product.slug);
     await page.goto("/checkout");
     await page.getByLabel("Phone", { exact: true }).fill("+961 71 000 111");
     await page.getByRole("radio", { name: /Pickup/ }).check();
+    // Choose explicitly: once more than one method is on, none is preselected.
+    await page.getByRole("radio", { name: /Cash on delivery/ }).check();
     await page.getByLabel(/I agree to the/).check();
     await page.getByRole("button", { name: /Place order/ }).click();
     await expect(page).toHaveURL(/\/order\/SG-/);

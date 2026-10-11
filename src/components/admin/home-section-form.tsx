@@ -11,6 +11,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { ImageUploader } from "./image-uploader";
 import { LocalDateTimeInput } from "./local-datetime-input";
+import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type Item = { key: string; title: string; body: string; href: string; imageId: string | null; imageUrl: string | null };
 
@@ -80,30 +81,33 @@ export function HomeSectionForm({ initial, choices }: { initial: HomeSectionInit
   const ids = (k: string) => (Array.isArray(config[k]) ? (config[k] as string[]) : []);
   const toggleConfigId = (k: string, id: string) => setConfig((c) => ({ ...c, [k]: ids(k).includes(id) ? ids(k).filter((x) => x !== id) : [...ids(k), id] }));
 
+  const submit = (formData: FormData) => {
+    formData.set(
+      "payload",
+      JSON.stringify({
+        id: s.id,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: s.body,
+        ctaLabel: s.ctaLabel,
+        ctaHref: s.ctaHref,
+        secondaryCtaLabel: s.secondaryCtaLabel,
+        secondaryCtaHref: s.secondaryCtaHref,
+        imageId: s.imageId,
+        isVisible: s.isVisible,
+        startsAt: (formData.get("startsAt") as string) || null,
+        endsAt: (formData.get("endsAt") as string) || null,
+        config,
+        items: items.map(({ title, body, href, imageId }) => ({ title, body, href, imageId })),
+      }),
+    );
+    return action(formData);
+  };
+
   return (
     <form
-      action={(formData) => {
-        formData.set(
-          "payload",
-          JSON.stringify({
-            id: s.id,
-            title: s.title,
-            subtitle: s.subtitle,
-            body: s.body,
-            ctaLabel: s.ctaLabel,
-            ctaHref: s.ctaHref,
-            secondaryCtaLabel: s.secondaryCtaLabel,
-            secondaryCtaHref: s.secondaryCtaHref,
-            imageId: s.imageId,
-            isVisible: s.isVisible,
-            startsAt: (formData.get("startsAt") as string) || null,
-            endsAt: (formData.get("endsAt") as string) || null,
-            config,
-            items: items.map(({ title, body, href, imageId }) => ({ title, body, href, imageId })),
-          }),
-        );
-        return action(formData);
-      }}
+      action={submit}
+      onSubmit={submitWithoutReset(submit)}
       className="space-y-6"
     >
       <FormMessage state={state} />

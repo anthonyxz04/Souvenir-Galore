@@ -16,6 +16,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { StoreIcon, TruckIcon } from "@/components/ui/icons";
 import { ImagePlaceholder, ResponsiveImage } from "@/components/ui/responsive-image";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type Line = {
   id: string;
@@ -116,7 +117,7 @@ export function CheckoutForm({
   const deliveryReady = fulfillment === "PICKUP" || Boolean(zone);
 
   return (
-    <form action={action} className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14" noValidate>
+    <form action={action} onSubmit={submitWithoutReset(action)} className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14" noValidate>
       <input type="hidden" name="expectedTotal" value={deliveryReady ? totals.total : ""} />
       <div className="space-y-10 lg:col-span-7">
         <FormMessage state={state} />

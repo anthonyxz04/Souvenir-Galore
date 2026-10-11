@@ -7,13 +7,14 @@ import { InputField, TextareaField } from "@/components/ui/field";
 import { FormMessage } from "@/components/ui/form-message";
 import { StarIcon } from "@/components/ui/icons";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 export function ReviewForm({ productId }: { productId: string }) {
   const [state, action] = useActionState(submitReviewAction, initialFormState);
   const [rating, setRating] = useState(0);
   if (state.status === "success") return <FormMessage state={state} />;
   return (
-    <form action={action} className="space-y-4 rounded-2xl bg-plaster p-5" noValidate>
+    <form action={action} onSubmit={submitWithoutReset(action)} className="space-y-4 rounded-2xl bg-plaster p-5" noValidate>
       <input type="hidden" name="productId" value={productId} />
       <FormMessage state={state} />
       <fieldset>

@@ -13,6 +13,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, StarIcon, TrashIcon } from "@/components/ui/icons";
 import { ImageUploader, type UploadedAsset } from "./image-uploader";
+import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type VariantState = {
   id?: string;
@@ -278,7 +279,7 @@ export function ProductEditor({ initial, choices }: { initial: EditorProduct; ch
   const isQuote = p.pricingType === "QUOTE";
 
   return (
-    <form action={formAction} className="space-y-6 pb-28" noValidate>
+    <form action={formAction} onSubmit={submitWithoutReset(formAction)} className="space-y-6 pb-28" noValidate>
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
       <FormMessage state={state} />
       {Object.keys(errors).length > 1 ? (

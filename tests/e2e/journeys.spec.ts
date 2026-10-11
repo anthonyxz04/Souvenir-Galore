@@ -106,6 +106,8 @@ test.describe.serial("customer features", () => {
     await page.goto("/checkout");
     await page.getByLabel("Phone", { exact: true }).fill("+961 76 222 333");
     await page.getByRole("radio", { name: /Pickup/ }).check();
+    // Choose explicitly: once more than one method is on, none is preselected.
+    await page.getByRole("radio", { name: /Cash on delivery/ }).check();
     await page.getByLabel(/I agree to the/).check();
     await page.getByRole("button", { name: /Place order/ }).click();
     await expect(page).toHaveURL(/\/order\/SG-\d+/);

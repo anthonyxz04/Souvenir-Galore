@@ -36,7 +36,7 @@ test.describe.serial("admin dashboard", () => {
     await page.getByRole("button", { name: "Add category" }).click();
     await page.getByRole("dialog").getByLabel("Name").fill("E2E Lanterns");
     await page.getByRole("dialog").getByRole("button", { name: "Create category" }).click();
-    await expect(page.getByRole("cell", { name: /E2E Lanterns/ })).toBeVisible();
+    await expect(page.getByRole("cell", { name: /^E2E Lanterns/ })).toBeVisible();
   });
 
   test("create a product with an image and publish it", async ({ page }) => {

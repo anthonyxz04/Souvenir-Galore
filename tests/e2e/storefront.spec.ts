@@ -59,6 +59,8 @@ test.describe("storefront", () => {
     await page.getByLabel("Street, building, floor").fill("Hamra Street, Building 5, 2nd floor");
     await page.getByLabel("Town / city").fill("Beirut");
     await page.getByLabel("Delivery area").selectOption({ label: "Beirut: $3.00, 1–2 days" });
+    // Choose explicitly: once more than one method is on, none is preselected.
+    await page.getByRole("radio", { name: /Cash on delivery/ }).check();
     await page.getByLabel(/I agree to the/).check();
     await expect(page.getByRole("button", { name: /Place order — \$23\.00/ })).toBeVisible();
     await page.getByRole("button", { name: /Place order/ }).click();

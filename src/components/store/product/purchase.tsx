@@ -13,6 +13,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { CheckIcon, CopyIcon, HeartIcon, InstagramIcon, MailIcon, MinusIcon, PlusIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { InquiryDialog } from "./inquiry-dialog";
+import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type Variant = {
   id: string;
@@ -181,7 +182,7 @@ export function ProductPurchase({
           </Link>
         </div>
       ) : (
-        <form action={formAction} className="space-y-6">
+        <form action={formAction} onSubmit={submitWithoutReset(formAction)} className="space-y-6">
           <input type="hidden" name="variantId" value={variant?.id ?? ""} />
           <input type="hidden" name="productSlug" value={product.slug} />
 
