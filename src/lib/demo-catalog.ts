@@ -13,6 +13,7 @@ import { prisma } from "./db";
 import { storeImage, deleteAssetFiles } from "./storage/images";
 import { syncProductDerived } from "./catalog/sync";
 import { slugify } from "./text";
+import { normalizePreview3d, parsePreview3d, productChoices } from "./candle3d/config";
 import { DEMO_NOTE, PRODUCTS } from "../../prisma/demo/products";
 
 export const DEMO_SKU_PREFIX = "DEMO-";
@@ -69,6 +70,12 @@ export async function addDemoProduct(index: number, uploadedById: string | null)
       madeToOrder: Boolean(demo.madeToOrder),
       prepTimeMinDays: demo.prep?.[0] ?? null,
       prepTimeMaxDays: demo.prep?.[1] ?? null,
+      preview3d: demo.preview3d
+        ? normalizePreview3d(
+            parsePreview3d(demo.preview3d),
+            productChoices({ options: demo.options ?? [], personalizationFields: (demo.personalization ?? []).map((f) => ({ label: f.label, type: f.type, options: f.options ?? [] })) }),
+          )
+        : undefined,
       options: demo.options ? { create: demo.options.map((o, position) => ({ name: o.name, values: o.values, position })) } : undefined,
       variants: {
         create: combos.map((combo, position) => ({

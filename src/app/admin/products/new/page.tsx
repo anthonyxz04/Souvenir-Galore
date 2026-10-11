@@ -5,6 +5,7 @@ import { absoluteUrl } from "@/lib/env";
 import { getSettings } from "@/lib/settings";
 import { AdminPageHeader } from "@/components/admin/admin-ui";
 import { ProductEditor, type EditorProduct } from "@/components/admin/product-editor";
+import { parsePreview3d } from "@/lib/candle3d/config";
 
 export const metadata: Metadata = { title: "New product" };
 
@@ -40,6 +41,7 @@ export default async function NewProductPage() {
     categoryIds: [],
     collectionIds: [],
     tagIds: [],
+    preview3d: parsePreview3d(null),
   };
   return (
     <div>

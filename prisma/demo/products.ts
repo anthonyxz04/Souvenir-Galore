@@ -28,6 +28,8 @@ export type DemoProduct = {
   limited?: boolean;
   track?: boolean;
   collections?: string[];
+  /** 3D candle preview settings (see src/lib/candle3d/config.ts). */
+  preview3d?: Record<string, unknown>;
 };
 
 export const PRODUCTS: DemoProduct[] = [
@@ -40,11 +42,23 @@ export const PRODUCTS: DemoProduct[] = [
     images: [art.concreteJar("limestone", undefined, 11), art.concreteJar("sage", "Maya", 12)],
     options: [
       { name: "Size", values: ["Small", "Large"] },
+      { name: "Jar color", values: ["Natural", "Charcoal", "Terracotta", "White"] },
       { name: "Scent", values: ["Fig & cedar", "Orange blossom", "Unscented"] },
     ],
     variantPrices: { Small: 1800, Large: 2600 },
     stock: 12,
-    personalization: [{ label: "Name on the label", type: "TEXT", isRequired: false, maxLength: 16, priceDelta: 200, placeholder: "Maya" }],
+    personalization: [
+      { label: "Name on the label", type: "TEXT", isRequired: false, maxLength: 16, priceDelta: 200, placeholder: "Maya" },
+      { label: "Wax color", type: "SELECT", isRequired: false, options: ["Ivory", "Blush", "Sage"] },
+      { label: "Lettering", type: "SELECT", isRequired: false, options: ["Classic", "Handwritten", "Modern"] },
+      { label: "Lid", type: "SELECT", isRequired: false, options: ["No lid", "Wood", "Gold"] },
+    ],
+    preview3d: {
+      enabled: true,
+      shape: "tumbler",
+      placeholderText: "Your name",
+      bindings: { jarColor: "Jar color", waxColor: "Wax color", size: "Size", lid: "Lid", font: "Lettering", labelText: ["Name on the label"] },
+    },
     bestseller: true,
     featured: true,
   },
@@ -63,6 +77,7 @@ export const PRODUCTS: DemoProduct[] = [
       { label: "Name", type: "TEXT", isRequired: true, maxLength: 16, placeholder: "Lara" },
       { label: "Date", type: "DATE", isRequired: false },
     ],
+    preview3d: { enabled: true, shape: "tapered", jarColor: "#e6c1ba", font: "script", placeholderText: "Lara", bindings: { labelText: ["Name", "Date"] } },
     featured: true,
   },
   {
@@ -107,6 +122,7 @@ export const PRODUCTS: DemoProduct[] = [
       { label: "Date", type: "DATE", isRequired: true },
       { label: "Ribbon color", type: "SELECT", isRequired: true, options: ["Blush", "Sky blue", "Sage", "Ivory"] },
     ],
+    preview3d: { enabled: true, shape: "pillar", waxColor: "#f2efea", placeholderText: "Baby's name", bindings: { labelText: ["Baby's name", "Date"] } },
     collections: ["wedding-season"],
   },
   {

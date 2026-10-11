@@ -82,6 +82,12 @@ On the order page you can:
   - **Making time** (min–max days): shown on the product page and in the cart.
   - **Max per order** and a **low-stock warning level**.
 - **Personalization fields:** short text, long text, date, or a list of choices. Each field can be required, have a character limit, a list of choices and a **surcharge**. Customers see the surcharge before adding to cart, and the server recalculates every price.
+- **3D preview (for candles):** turn on **Show a 3D preview on the product page**, and the product page shows a candle customers can turn around. It updates as they pick options and type their text.
+  - **Shape:** straight jar, tapered jar, low bowl or pillar candle (no jar).
+  - **What customers can change:** link the **jar color**, **wax color**, **size**, **lid** and **lettering style** each to one of the product's options or choice lists. Then pick how each value looks: a color, a size from 60% to 160%, a lid style or a lettering style. Anything not linked stays the same for everyone. **Link my options automatically** guesses the links from the option names, and you can change them.
+  - **Label:** choose which personalization fields are printed on the jar (up to 3 lines), the text shown before the customer types, and the label and text colors.
+  - The live preview beside the settings shows the result. Options that don't change the look, such as scent, still work as usual and are saved with the order.
+  - The sample products include three candles with a 3D preview already set up, to show how it works.
 - **Badges:** featured, bestseller, limited edition. *New* and *On sale* badges are automatic.
 - **Search engines:** optional custom title and description.
 - **Status:** **Draft** (hidden), **Active** (visible), **Archived** (hidden, kept for order history).

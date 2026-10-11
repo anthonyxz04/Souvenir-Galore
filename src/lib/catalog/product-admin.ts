@@ -13,6 +13,7 @@ import { parseMoney } from "../money";
 import { isValidSlug, slugify } from "../text";
 import { syncProductDerived } from "./sync";
 import { variantCombinations, variantTitle } from "./pricing";
+import { normalizePreview3d, preview3dSchema, productChoices } from "../candle3d/config";
 
 export class ProductValidationError extends Error {
   constructor(message: string, public readonly fieldErrors: Record<string, string> = {}) {
@@ -97,6 +98,8 @@ export const productPayloadSchema = z.object({
   categoryIds: z.array(z.string().max(40)).max(30),
   collectionIds: z.array(z.string().max(40)).max(30),
   tagIds: z.array(z.string().max(40)).max(80),
+  /** Left out by older clients: the saved 3D settings are then kept as they are. */
+  preview3d: preview3dSchema.optional(),
 });
 
 export type ProductPayload = z.infer<typeof productPayloadSchema>;
@@ -223,6 +226,14 @@ export async function saveProduct(payload: ProductPayload, decimals: number, act
     saleEndsAt,
     seoTitle: payload.seoTitle,
     seoDescription: payload.seoDescription,
+    ...(payload.preview3d
+      ? {
+          preview3d: normalizePreview3d(
+            payload.preview3d,
+            productChoices({ options, personalizationFields: payload.personalizationFields.map((f) => ({ label: f.label, type: f.type, options: f.options })) }),
+          ),
+        }
+      : {}),
     publishedAt: payload.status === "ACTIVE" ? existing?.publishedAt ?? new Date() : existing?.publishedAt ?? null,
   };
 
@@ -363,12 +374,14 @@ export async function duplicateProduct(productId: string) {
     ratingAvg: _ra,
     ratingCount: _rc,
     publishedAt: _p,
+    preview3d,
     ...rest
   } = source;
   return prisma.$transaction(async (tx) => {
     const copy = await tx.product.create({
       data: {
         ...rest,
+        preview3d: preview3d ?? undefined,
         name: `${source.name} (copy)`,
         slug,
         status: "DRAFT",

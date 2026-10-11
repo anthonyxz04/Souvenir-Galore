@@ -13,6 +13,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { CheckIcon, CopyIcon, HeartIcon, InstagramIcon, MailIcon, MinusIcon, PlusIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { InquiryDialog } from "./inquiry-dialog";
+import { useCustomization } from "./customization";
 import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type Variant = {
@@ -75,6 +76,20 @@ export function ProductPurchase({
   const [values, setValues] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [state, formAction] = useActionState(addToCartAction, initialFormState);
+
+  // Tell the 3D preview (if the page has one) what's picked and typed.
+  const setCustomization = useCustomization()?.setSelection;
+  useEffect(() => {
+    if (!setCustomization) return;
+    const selection: Record<string, string> = {};
+    product.options.forEach((option, i) => {
+      if (selected[i]) selection[option.name] = selected[i]!;
+    });
+    product.personalizationFields.forEach((field) => {
+      if (values[field.id]) selection[field.label] = values[field.id];
+    });
+    setCustomization(selection);
+  }, [setCustomization, selected, values, product.options, product.personalizationFields]);
 
   // Pre-fill the first name field with the name typed on the homepage gift tag.
   useEffect(() => {

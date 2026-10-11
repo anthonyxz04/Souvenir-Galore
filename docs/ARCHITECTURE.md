@@ -35,6 +35,8 @@ src/
     storage/             Local/S3 drivers, image processing (sharp), URLs
     settings/            Typed, validated, dashboard-editable settings
     content/             Homepage sections
+    candle3d/            3D candle preview: config.ts (settings, choices → look; tested),
+                         scene.ts (three.js drawing, loaded only in the browser on demand)
     email/               SMTP sending and templates
     rate-limit.ts, spam.ts, audit.ts, analytics.ts, maintenance.ts, csv.ts, text.ts
   components/            UI (ui/, store/, admin/, cart/, checkout/, account/, auth/)
@@ -56,6 +58,7 @@ tests/                   unit/, integration/, e2e/ (see docs/TESTING.md)
 | Product listing fields (price range, in stock, rating) are denormalized and re-synced after every change. | `lib/catalog/sync.ts` |
 | Permissions live in one map, and each admin action and route checks one. | `lib/auth/permissions.ts`, `server/guard.ts`, `lib/auth/guards.ts` |
 | Settings are zod-validated JSON rows with safe defaults (no invented contact details). | `lib/settings/` |
+| The 3D preview only shows choices; the purchase form is still what goes into the cart, and the server prices it as usual. three.js is downloaded only on product pages that have a 3D preview. | `lib/candle3d/`, `components/store/product/product-media.tsx` |
 
 ## Request flow
 

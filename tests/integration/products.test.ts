@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { duplicateProduct, productPayloadSchema, ProductValidationError, saveProduct, type ProductPayload } from "@/lib/catalog/product-admin";
 import { hasDatabase, resetDatabase } from "./helpers";
+import { parsePreview3d } from "@/lib/candle3d/config";
+import { addDemoProduct } from "@/lib/demo-catalog";
 
 function payload(overrides: Partial<ProductPayload> = {}): ProductPayload {
   return productPayloadSchema.parse({
@@ -101,5 +103,52 @@ describe.skipIf(!hasDatabase)("product management (real database)", () => {
     expect(product.variants[0].sku).toBeNull();
     expect(product.variants[0].stock).toBe(0);
     expect(product.variants[0].price).toBe(1800);
+  });
+  it("saves 3D preview settings in step with the product's choices", async () => {
+    const options = [
+      { name: "Jar color", values: ["Charcoal", "White"] },
+      { name: "Size", values: ["Small", "Large"] },
+    ];
+    const variants = ["Charcoal", "White"].flatMap((color, i) =>
+      ["Small", "Large"].map((size, j) => ({ option1: color, option2: size, option3: null, sku: `J-${i}${j}`, price: "18.00", salePrice: null, costPrice: null, stock: 1, stockAdjustment: 0, isActive: true })),
+    );
+    const personalizationFields = [{ label: "Name", type: "TEXT" as const, isRequired: false, maxLength: 16, options: [], priceDelta: null, placeholder: null, helpText: null }];
+    const saved = await saveProduct(
+      payload({
+        options,
+        variants,
+        personalizationFields,
+        preview3d: parsePreview3d({ enabled: true, shape: "tapered", bindings: { jarColor: "Jar color", size: "Size", lid: "Removed option", labelText: ["Name", "Gone"] }, jarColors: { Charcoal: "#111111", Old: "#222222" } }),
+      }),
+      2,
+      "actor",
+    );
+    const stored = parsePreview3d((await prisma.product.findUniqueOrThrow({ where: { id: saved.id } })).preview3d);
+    expect(stored.enabled).toBe(true);
+    expect(stored.shape).toBe("tapered");
+    expect(stored.bindings).toMatchObject({ jarColor: "Jar color", size: "Size", lid: "", labelText: ["Name"] });
+    expect(stored.jarColors).toEqual({ Charcoal: "#111111", White: "#f2efea" }); // kept, suggested, stale value dropped
+    expect(stored.sizes.Small).toBeLessThan(stored.sizes.Large);
+
+    // Saving from an older editor that doesn't send 3D settings keeps them.
+    const { preview3d: _omit, ...withoutPreview } = payload({ id: saved.id, options, variants, personalizationFields });
+    await saveProduct(withoutPreview as ProductPayload, 2, "actor");
+    expect(parsePreview3d((await prisma.product.findUniqueOrThrow({ where: { id: saved.id } })).preview3d).shape).toBe("tapered");
+
+    // Duplicates keep the 3D settings.
+    const copy = await duplicateProduct(saved.id);
+    expect(parsePreview3d((await prisma.product.findUniqueOrThrow({ where: { id: copy.id } })).preview3d).enabled).toBe(true);
+  });
+
+  it("sample candle comes with a working 3D setup", async () => {
+    await prisma.category.create({ data: { name: "Concrete candle jars", slug: "concrete-candle-jars" } });
+    await addDemoProduct(0, null);
+    const product = await prisma.product.findFirstOrThrow({ where: { variants: { some: { sku: { startsWith: "DEMO-01-" } } } } });
+    const config = parsePreview3d(product.preview3d);
+    expect(config.enabled).toBe(true);
+    expect(config.bindings).toMatchObject({ jarColor: "Jar color", waxColor: "Wax color", size: "Size", lid: "Lid", font: "Lettering", labelText: ["Name on the label"] });
+    expect(Object.keys(config.jarColors)).toEqual(["Natural", "Charcoal", "Terracotta", "White"]);
+    expect(config.lids).toEqual({ "No lid": "none", Wood: "wood", Gold: "gold" });
+    expect(config.fonts).toEqual({ Classic: "serif", Handwritten: "script", Modern: "sans" });
   });
 });

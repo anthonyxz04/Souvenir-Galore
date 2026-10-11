@@ -13,6 +13,8 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, StarIcon, TrashIcon } from "@/components/ui/icons";
 import { ImageUploader, type UploadedAsset } from "./image-uploader";
+import { Preview3dEditor } from "./preview3d-editor";
+import { normalizePreview3d, productChoices, type Preview3dConfig } from "@/lib/candle3d/config";
 import { submitWithoutReset } from "@/lib/submit-without-reset";
 
 type VariantState = {
@@ -82,6 +84,7 @@ export type EditorProduct = {
   categoryIds: string[];
   collectionIds: string[];
   tagIds: string[];
+  preview3d: Preview3dConfig;
 };
 
 export type EditorChoices = {
@@ -171,6 +174,7 @@ export function ProductEditor({ initial, choices }: { initial: EditorProduct; ch
     })),
   );
   const [images, setImages] = useState(initial.images);
+  const [preview3d, setPreview3d] = useState(initial.preview3d);
 
   // Datetime inputs use the browser's time zone, so set them after mounting.
   useEffect(() => {
@@ -206,6 +210,14 @@ export function ProductEditor({ initial, choices }: { initial: EditorProduct; ch
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optionsKey]);
+
+  const fieldChoices = fields.map((f) => ({ label: f.label.trim(), type: f.type, options: f.optionsText.split(",").map((o) => o.trim()).filter(Boolean) }));
+  const fieldChoicesKey = JSON.stringify(fieldChoices);
+  const choices3d = useMemo(
+    () => productChoices({ options, personalizationFields: fieldChoices.filter((f) => f.label) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [optionsKey, fieldChoicesKey],
+  );
 
   const setVariant = (index: number, patch: Partial<VariantState>) => setVariants((vs) => vs.map((v, i) => (i === index ? { ...v, ...patch } : v)));
 
@@ -261,6 +273,7 @@ export function ProductEditor({ initial, choices }: { initial: EditorProduct; ch
     categoryIds: p.categoryIds,
     collectionIds: p.collectionIds,
     tagIds: p.tagIds,
+    preview3d: normalizePreview3d(preview3d, choices3d),
   };
 
   const toggleId = (key: "categoryIds" | "collectionIds" | "tagIds", id: string) =>
@@ -589,6 +602,10 @@ export function ProductEditor({ initial, choices }: { initial: EditorProduct; ch
                 </div>
               </div>
             ))}
+          </Section>
+
+          <Section title="3D preview" description="For candles: an interactive 3D candle on the product page that shows each customer's choices.">
+            <Preview3dEditor value={preview3d} onChange={setPreview3d} choices={choices3d} productName={p.name} />
           </Section>
 
           <Section title="Search engines" description="Optional. Defaults to the product name and short description.">

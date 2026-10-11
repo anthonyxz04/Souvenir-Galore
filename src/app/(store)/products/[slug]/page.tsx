@@ -19,7 +19,9 @@ import { ProductBadge } from "@/components/ui/badge";
 import { Breadcrumbs, Container, Stars } from "@/components/ui/misc";
 import { Notice } from "@/components/ui/form-message";
 import { ClockIcon, StoreIcon, TruckIcon } from "@/components/ui/icons";
-import { ProductGallery } from "@/components/store/product/gallery";
+import { ProductMedia } from "@/components/store/product/product-media";
+import { CustomizationProvider } from "@/components/store/product/customization";
+import { parsePreview3d } from "@/lib/candle3d/config";
 import { ProductPurchase } from "@/components/store/product/purchase";
 import { ProductReviews } from "@/components/store/product/reviews";
 import { ShareButtons } from "@/components/store/product/share-buttons";
@@ -120,6 +122,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     { label: product.name },
   ];
 
+  const preview3d = parsePreview3d(product.preview3d);
   const galleryImages = product.images.map((image) => ({ ...image.asset, alt: image.alt || image.asset.alt || product.name }));
   const productUrl = absoluteUrl(`/products/${product.slug}`);
   const imageBase = base.startsWith("http") ? base : absoluteUrl(base);
@@ -170,9 +173,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
         ) : null}
         <Breadcrumbs items={trail} />
 
+        <CustomizationProvider>
         <div className="mt-6 grid gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="lg:col-span-7">
-            <ProductGallery images={galleryImages} base={base} productName={product.name} />
+            <div className="lg:sticky lg:top-28">
+              <ProductMedia images={galleryImages} base={base} productName={product.name} preview3d={preview3d.enabled ? preview3d : null} />
+            </div>
           </div>
 
           <div className="lg:col-span-5">
@@ -263,6 +269,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             </div>
           </div>
         </div>
+        </CustomizationProvider>
 
         {product.description ? (
           <section aria-labelledby="details-heading" className="mt-16 grid gap-6 border-t border-line pt-12 lg:grid-cols-12">

@@ -13,6 +13,7 @@ import { deleteProductAction, duplicateProductAction } from "@/server/actions/ad
 import { AdminPageHeader, formatDateTime, Panel } from "@/components/admin/admin-ui";
 import { ConfirmButton } from "@/components/admin/confirm-button";
 import { ProductEditor, type EditorProduct } from "@/components/admin/product-editor";
+import { parsePreview3d } from "@/lib/candle3d/config";
 import { Notice } from "@/components/ui/form-message";
 import { buttonClass } from "@/components/ui/button";
 
@@ -111,6 +112,7 @@ export default async function EditProductPage({ params, searchParams }: { params
     categoryIds: product.categories.map((c) => c.categoryId),
     collectionIds: product.collections.map((c) => c.collectionId),
     tagIds: product.tags.map((t) => t.tagId),
+    preview3d: parsePreview3d(product.preview3d),
   };
   if (initial.variants.length === 0) {
     initial.variants = [{ option1: null, option2: null, option3: null, sku: "", price: "", salePrice: "", costPrice: "", stock: 0, isActive: true }];

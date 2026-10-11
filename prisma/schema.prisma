@@ -262,6 +262,8 @@ model Product {
   allowInquiry      Boolean       @default(true)
   seoTitle          String?
   seoDescription    String?
+  /// 3D candle preview settings (see src/lib/candle3d/config.ts); null = off.
+  preview3d         Json?
 
   // Denormalized values kept in sync by src/lib/catalog/sync.ts for fast listing.
   priceMin     Int     @default(0)
