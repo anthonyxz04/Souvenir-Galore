@@ -1,0 +1,294 @@
+{
+  "url": "https://souvenir-galore.netlify.app",
+  "checkedAt": "2026-10-11T14:47:56.484Z",
+  "netlifyBadgeBlocked": true,
+  "passed": 57,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Database reachable (/api/health)",
+      "ok": true,
+      "detail": "200 application/json"
+    },
+    {
+      "name": "Homepage responds",
+      "ok": true,
+      "detail": "200 text/html"
+    },
+    {
+      "name": "Security header: Content-Security-Policy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Security header: X-Content-Type-Options",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Security header: Strict-Transport-Security",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Security header: Referrer-Policy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Favicon (/favicon.ico)",
+      "ok": true,
+      "detail": "200 image/x-icon"
+    },
+    {
+      "name": "Home-screen icon (/apple-icon.png)",
+      "ok": true,
+      "detail": "200 image/png"
+    },
+    {
+      "name": "App icon (/icons/icon-512.png)",
+      "ok": true,
+      "detail": "200 image/png"
+    },
+    {
+      "name": "Sharing image (/og-image.png)",
+      "ok": true,
+      "detail": "200 image/png"
+    },
+    {
+      "name": "Web app manifest",
+      "ok": true,
+      "detail": "200 application/manifest+json"
+    },
+    {
+      "name": "robots.txt",
+      "ok": true,
+      "detail": "200 text/plain"
+    },
+    {
+      "name": "sitemap.xml",
+      "ok": true,
+      "detail": "200 application/xml"
+    },
+    {
+      "name": "Admin requires sign-in",
+      "ok": true,
+      "detail": "307 "
+    },
+    {
+      "name": "Account requires sign-in",
+      "ok": true,
+      "detail": "307 "
+    },
+    {
+      "name": "Owner setup page hidden without the token",
+      "ok": true,
+      "detail": "404 text/html"
+    },
+    {
+      "name": "Owner setup page hidden with a wrong token",
+      "ok": true,
+      "detail": "404 text/html"
+    },
+    {
+      "name": "Admin upload API refuses anonymous requests",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "name": "Cleanup job refuses requests without its secret",
+      "ok": true,
+      "detail": "401 application/json"
+    },
+    {
+      "name": "Search suggestions API",
+      "ok": true,
+      "detail": "200 application/json"
+    },
+    {
+      "name": "[desktop] /",
+      "ok": true,
+      "detail": "\"Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /shop",
+      "ok": true,
+      "detail": "\"Shop all | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /collections",
+      "ok": true,
+      "detail": "\"Collections | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /gifts",
+      "ok": true,
+      "detail": "\"Gift finder | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /search?q=candle",
+      "ok": true,
+      "detail": "\"Search | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /custom-order",
+      "ok": true,
+      "detail": "\"Request a custom order | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /contact",
+      "ok": true,
+      "detail": "\"Contact | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /faq",
+      "ok": true,
+      "detail": "\"Frequently asked questions | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /about",
+      "ok": true,
+      "detail": "\"About Souvenir Galore | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /pages/delivery-and-pickup",
+      "ok": true,
+      "detail": "\"Delivery & pickup | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /pages/privacy-policy",
+      "ok": true,
+      "detail": "\"Privacy policy | Souvenir Galore\" (first response 403, retried)"
+    },
+    {
+      "name": "[desktop] /cart",
+      "ok": true,
+      "detail": "\"Your cart | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /checkout",
+      "ok": true,
+      "detail": "\"Your cart | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /login",
+      "ok": true,
+      "detail": "\"Sign in | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /register",
+      "ok": true,
+      "detail": "\"Create an account | Souvenir Galore\""
+    },
+    {
+      "name": "[desktop] /forgot-password",
+      "ok": true,
+      "detail": "\"Reset your password | Souvenir Galore\""
+    },
+    {
+      "name": "Forms submit to the server (password-reset form)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Contact page shows contact links",
+      "ok": true,
+      "detail": "https://wa.me/96176620434 https://ig.me/m/souvenir.galore mailto:souvenirgalore@outlook.com tel:+96176620434"
+    },
+    {
+      "name": "[mobile] /",
+      "ok": true,
+      "detail": "\"Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /shop",
+      "ok": true,
+      "detail": "\"Shop all | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /collections",
+      "ok": true,
+      "detail": "\"Collections | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /gifts",
+      "ok": true,
+      "detail": "\"Gift finder | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /search?q=candle",
+      "ok": true,
+      "detail": "\"Search | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /custom-order",
+      "ok": true,
+      "detail": "\"Request a custom order | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /contact",
+      "ok": true,
+      "detail": "\"Contact | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /faq",
+      "ok": true,
+      "detail": "\"Frequently asked questions | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /about",
+      "ok": true,
+      "detail": "\"About Souvenir Galore | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /pages/delivery-and-pickup",
+      "ok": true,
+      "detail": "\"Delivery & pickup | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /pages/privacy-policy",
+      "ok": true,
+      "detail": "\"Privacy policy | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /cart",
+      "ok": true,
+      "detail": "\"Your cart | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /checkout",
+      "ok": true,
+      "detail": "\"Your cart | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /login",
+      "ok": true,
+      "detail": "\"Sign in | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /register",
+      "ok": true,
+      "detail": "\"Create an account | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] /forgot-password",
+      "ok": true,
+      "detail": "\"Reset your password | Souvenir Galore\""
+    },
+    {
+      "name": "[mobile] Menu opens with links",
+      "ok": true,
+      "detail": "44 links"
+    },
+    {
+      "name": "3D preview",
+      "ok": true,
+      "detail": "no products in the shop yet"
+    },
+    {
+      "name": "Internal links checked",
+      "ok": true,
+      "detail": "46 links"
+    }
+  ]
+}
